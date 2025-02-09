@@ -1,6 +1,7 @@
 import 'dart:developer';
 import 'dart:isolate';
 
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:survey_app/api/dio_client.dart';
 
@@ -54,6 +55,7 @@ class StreetAPI {
 }
 
 final streetAPIProvider = Provider<StreetAPI>((ref) {
-  const String baseUrl = 'https://786a-112-78-165-162.ngrok-free.app/api';
+  final box = Hive.box('base_url');
+  final baseUrl = box.get('base_url');
   return StreetAPI(DioClient(baseUrl));
 });

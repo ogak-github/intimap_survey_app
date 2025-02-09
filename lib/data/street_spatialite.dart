@@ -225,7 +225,7 @@ class StreetData {
     List<String> queries = [];
     for (var street in streets) {
       var query =
-          "INSERT INTO street (osm_id, nama, truk, pickup, roda3, last_modified_time, geom) "
+          "INSERT INTO street (osm_id, nama, truk, pickup, roda3, last_modified_time, meta, geom) "
           "VALUES('${street.osmId}', '${street.name}', ${street.truk}, ${street.pickup}, ${street.roda3}, '${street.lastModifiedTime}','${street.meta}','${street.geom}');";
       queries.add(query);
     }
