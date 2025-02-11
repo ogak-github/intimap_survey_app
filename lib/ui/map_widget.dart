@@ -76,9 +76,15 @@ class _MapViewState extends ConsumerState<MapView> {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   FloatingActionButton.small(
+                    child: const Icon(Icons.line_axis),
+                    onPressed: () {
+                      ref.read(drawStreetProvider.notifier).loadStreetData();
+                    },
+                  ),
+                  FloatingActionButton.small(
                     child: const Icon(Icons.refresh),
                     onPressed: () {
-                      ref.invalidate(drawStreetProvider);
+                      ref.read(loadAllStreetProvider);
                     },
                   ),
                   const SizedBox(height: 15),

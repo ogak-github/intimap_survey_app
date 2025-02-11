@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:collection';
+import 'dart:developer';
 import 'dart:io';
+import 'dart:isolate';
 
 import 'package:flutter/services.dart';
 import 'package:path/path.dart';
@@ -75,8 +77,8 @@ class StreetSpatialite {
 
   Future<String> _getDbpath() async {
     final String dbDirPath = await _getDbDirPath();
-    final date = DateTime.now().millisecondsSinceEpoch;
-    final dbPath = join(dbDirPath, "street_merauke_$date.db");
+    //final date = DateTime.now().millisecondsSinceEpoch;
+    final dbPath = join(dbDirPath, "street_merauke_local.db");
     return dbPath;
   }
 
@@ -117,6 +119,18 @@ class StreetSpatialite {
     await result.free();
 
     return false;
+  }
+
+  static Future<void> checkingDatabase() async {
+    final dbDirPath = await _getDbDirPath();
+    final directory = Directory(dbDirPath);
+    final logger = MyLogger("DB");
+    logger.i("Checking database");
+    if (await directory.exists()) {
+      logger.i("Database exists");
+    } else {
+      logger.i("Database not found");
+    }
   }
 
   static Future<void> cleanOldDatabases() async {
@@ -178,7 +192,7 @@ class StreetSpatialite {
     final queries = <String>[];
 
     queries.add("CREATE TABLE $ifNotExists street "
-        "(id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, osm_id TEXT, nama TEXT, truk INTEGER, pickup INTEGER, roda3 INTEGER, last_modified_time TIMESTAMP, meta TEXT );");
+        "(id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, osm_id TEXT, nama TEXT, truk INTEGER, pickup INTEGER, roda3 INTEGER, last_modified_time TIMESTAMP, meta TEXT);");
     queries.add("CREATE INDEX $ifNotExists rNama ON street(nama) ;");
     queries.add("CREATE INDEX $ifNotExists rTruk ON street(truk) ;");
     queries.add("CREATE INDEX $ifNotExists rPickup ON street(pickup) ;");
@@ -189,7 +203,7 @@ class StreetSpatialite {
 
     queries.add("CREATE INDEX $ifNotExists rMeta ON street(meta) ;");
     queries.add(
-        "SELECT AddGeometryColumn('street', 'geom',  4326, 'GEOMETRY', 2);");
+        "SELECT AddGeometryColumn('street', 'geom',  4326, 'GEOMETRY', 'XY');");
     queries.add("SELECT CreateSpatialIndex('street','geom');");
 
     /*    queries.add("CREATE INDEX $ifNotExists rType ON routing(type) ;");
@@ -221,21 +235,75 @@ class StreetData {
   Future<MySpatialite> get spatialite => streetSpatialite.getSpatialite();
   Future<SqliteQueue> get sqliteQueue => _queue;
 
-  Future<bool> fillDataIntoDB(List<Street> streets) async {
+  Future<bool> fillDataIntoDB(Street streets) async {
+    List<String> queries = [];
+    MyLogger("Fill data into DB").i(streets.osmId);
+    var query =
+        "INSERT INTO street (osm_id, nama, truk, pickup, roda3, last_modified_time, meta, geom) "
+        "VALUES('${streets.osmId}', '${streets.name}', ${streets.truk}, ${streets.pickup}, ${streets.roda3}, '${streets.lastModifiedTime}','${streets.meta}', GeomFromText('${streets.geom}', 4326));";
+    queries.add(query);
+
+    try {
+      //MyLogger("Query Length").i(queries.toString());
+      return (await spatialite).executeQueriesWithTransaction(queries);
+    } on PlatformException catch (e) {
+      MyLogger("DB Platform Exception").e(e.toString());
+      return false;
+    } catch (e) {
+      MyLogger("DB").e(e.toString());
+      return false;
+    }
+  }
+
+  Future<bool> fillBatchDataIntoDB(List<Street> streets) async {
+    MyLogger("Fill data into DB").i(streets.length.toString());
     List<String> queries = [];
     for (var street in streets) {
-      var query =
-          "INSERT INTO street (osm_id, nama, truk, pickup, roda3, last_modified_time, meta, geom) "
-          "VALUES('${street.osmId}', '${street.name}', ${street.truk}, ${street.pickup}, ${street.roda3}, '${street.lastModifiedTime}','${street.meta}','${street.geom}');";
-      queries.add(query);
+      queries.add(street.insertQuery);
     }
 
     try {
       //MyLogger("Query Length").i(queries.toString());
       return (await spatialite).executeQueriesWithTransaction(queries);
     } on PlatformException catch (e) {
+      MyLogger("DB Platform Exception").e(e.toString());  
+      return false;
+    } catch (e) {
       MyLogger("DB").e(e.toString());
       return false;
+    }
+  }
+
+  Future<List<Street>> getStreet() async {
+    List<String> queries = [];
+    var query =
+        "SELECT  id, osm_id, nama, truk, pickup, roda3, last_modified_time, meta, st_astext(geom) as geom FROM street";
+    queries.add(query);
+
+    try {
+      var data = await (sqliteQueue).then((val) {
+        return val.runQuery(query);
+      });
+      if (data == null) return [];
+      List<Street> streets = [];
+      var isolatedStreets = await Isolate.run<List<Street>>(() async {
+        for (var item in data) {
+          Map<String, dynamic> map = item;
+          Street s = Street.fromJson(map);
+          if (s.geom.contains("LINESTRING")) {
+            streets.add(s);
+          }
+        }
+
+        return streets;
+      });
+      return isolatedStreets;
+    } on PlatformException catch (e) {
+      MyLogger("DB Platform Exception").e(e.toString());
+      return [];
+    } catch (e) {
+      MyLogger("DB").e(e.toString());
+      return [];
     }
   }
 }

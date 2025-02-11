@@ -209,7 +209,7 @@ class __$$StreetImplCopyWithImpl<$Res>
 
 /// @nodoc
 @JsonSerializable()
-class _$StreetImpl with DiagnosticableTreeMixin implements _Street {
+class _$StreetImpl extends _Street with DiagnosticableTreeMixin {
   const _$StreetImpl(
       {required this.id,
       @JsonKey(name: 'osm_id') required this.osmId,
@@ -219,7 +219,8 @@ class _$StreetImpl with DiagnosticableTreeMixin implements _Street {
       this.roda3,
       this.meta,
       @JsonKey(name: 'last_modified_time') required this.lastModifiedTime,
-      required this.geom});
+      required this.geom})
+      : super._();
 
   factory _$StreetImpl.fromJson(Map<String, dynamic> json) =>
       _$$StreetImplFromJson(json);
@@ -304,7 +305,7 @@ class _$StreetImpl with DiagnosticableTreeMixin implements _Street {
   }
 }
 
-abstract class _Street implements Street {
+abstract class _Street extends Street {
   const factory _Street(
       {required final int id,
       @JsonKey(name: 'osm_id') required final String osmId,
@@ -316,6 +317,7 @@ abstract class _Street implements Street {
       @JsonKey(name: 'last_modified_time')
       required final DateTime lastModifiedTime,
       required final String geom}) = _$StreetImpl;
+  const _Street._() : super._();
 
   factory _Street.fromJson(Map<String, dynamic> json) = _$StreetImpl.fromJson;
 

@@ -16,7 +16,7 @@ class HiveSetup {
 
     final box = await Hive.openBox('base_url');
     if (box.isEmpty) {
-      box.put('base_url', 'https://8b58-118-99-81-164.ngrok-free.app');
+      box.put('base_url', 'https://7ae8-112-78-165-162.ngrok-free.app');
     }
   }
 }

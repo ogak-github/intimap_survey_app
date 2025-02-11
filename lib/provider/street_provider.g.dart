@@ -171,12 +171,12 @@ class _StreetProviderProviderElement
   int get page => (origin as StreetProviderProvider).page;
 }
 
-String _$loadAllStreetHash() => r'39788237c0a98bbdf98db76b6b15a1c7de30a50a';
+String _$loadAllStreetHash() => r'f86ab2a810b74b19f055f92eb41d6b7e933662aa';
 
 /// See also [LoadAllStreet].
 @ProviderFor(LoadAllStreet)
 final loadAllStreetProvider =
-    AutoDisposeAsyncNotifierProvider<LoadAllStreet, List<Street>>.internal(
+    AutoDisposeAsyncNotifierProvider<LoadAllStreet, void>.internal(
   LoadAllStreet.new,
   name: r'loadAllStreetProvider',
   debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
@@ -186,8 +186,8 @@ final loadAllStreetProvider =
   allTransitiveDependencies: null,
 );
 
-typedef _$LoadAllStreet = AutoDisposeAsyncNotifier<List<Street>>;
-String _$drawStreetHash() => r'ba1ce8a572d19baaed53c6d15e94ed770df1b641';
+typedef _$LoadAllStreet = AutoDisposeAsyncNotifier<void>;
+String _$drawStreetHash() => r'20b5cbde0f30317b7f0b1f437b39b10de8facbbf';
 
 /// See also [DrawStreet].
 @ProviderFor(DrawStreet)

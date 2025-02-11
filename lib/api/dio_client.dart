@@ -14,18 +14,18 @@ class DioClient {
       ..options.connectTimeout = connectionTimeout
       ..options.receiveTimeout = connectionReceiveTimeout
       ..options.responseType = ResponseType.json;
-    /*  ..interceptors.add(PrettyDioLogger())
-    ..interceptors.add(
-      PrettyDioLogger(
-        request: true,
-        requestHeader: true,
-        requestBody: false,
-        responseHeader: false,
-        responseBody: true,
-        compact: true,
-        maxWidth: 90,
-      ),
-    ); */
+    /* ..interceptors.add(PrettyDioLogger())
+      ..interceptors.add(
+        PrettyDioLogger(
+          request: true,
+          requestHeader: true,
+          requestBody: false,
+          responseHeader: false,
+          responseBody: true,
+          compact: true,
+          maxWidth: 90,
+        ),
+      ); */
   }
 
   Future<Response> get(

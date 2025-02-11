@@ -36,6 +36,9 @@ class StreetAPI {
       final response = await _dioClient.get(
         '/loadstreets',
       );
+      if (response.statusCode != 200) {
+        return [];
+      }
       var isolatedStreets = await Isolate.run<List<Street>>(() async {
         for (var item in response.data) {
           Map<String, dynamic> map = item;
@@ -56,6 +59,12 @@ class StreetAPI {
 
 final streetAPIProvider = Provider<StreetAPI>((ref) {
   final box = Hive.box('base_url');
-  final baseUrl = box.get('base_url');
-  return StreetAPI(DioClient(baseUrl));
+  var currentUrl = 'https://7ae8-112-78-165-162.ngrok-free.app/api';
+  var urlFromBox = box.get('base_url');
+  if (urlFromBox != null) {
+    currentUrl = urlFromBox;
+  }
+
+  return StreetAPI(DioClient(currentUrl));
+  //return StreetAPI(DioClient('https://7ae8-112-78-165-162.ngrok-free.app/api'));
 });

@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:survey_app/data/hive_setup.dart';
-import 'package:survey_app/data/street_spatialite.dart';
 
+import 'data/street_spatialite.dart';
 import 'main.dart';
 import 'utils/app_logger.dart';
 
@@ -14,9 +14,10 @@ void app() async {
   await HiveSetup.init();
 
   try {
-    await StreetSpatialite.cleanOldDatabases();
+    //await StreetSpatialite.cleanOldDatabases();
+    await StreetSpatialite.checkingDatabase();
   } catch (e) {
-    MyLogger("Clean old database").e(e.toString());
+    MyLogger("Checking database").e(e.toString());
   }
 
   if (kDebugMode) {
