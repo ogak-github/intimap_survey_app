@@ -30,3 +30,15 @@ Map<String, dynamic> _$$StreetImplToJson(_$StreetImpl instance) =>
       'last_modified_time': instance.lastModifiedTime.toIso8601String(),
       'geom': instance.geom,
     };
+
+_$MetadataImpl _$$MetadataImplFromJson(Map<String, dynamic> json) =>
+    _$MetadataImpl(
+      notes: json['notes'] as String?,
+      updated: json['updated'] as bool?,
+    );
+
+Map<String, dynamic> _$$MetadataImplToJson(_$MetadataImpl instance) =>
+    <String, dynamic>{
+      'notes': instance.notes,
+      'updated': instance.updated,
+    };

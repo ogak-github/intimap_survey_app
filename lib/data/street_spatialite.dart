@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:collection';
-import 'dart:developer';
 import 'dart:io';
 import 'dart:isolate';
 
@@ -9,6 +8,7 @@ import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:survey_app/data/spatialite.dart';
 import 'package:survey_app/model/street.dart';
+import 'package:survey_app/model/update_data.dart';
 
 import '../utils/app_logger.dart';
 import '../utils/device_info.dart';
@@ -255,18 +255,50 @@ class StreetData {
     }
   }
 
+/*   Future<bool> checkDataExist(String osmId) async {
+    var query = "SELECT osm_id FROM street WHERE osm_id = '$osmId'";
+    try {
+      var data = await (sqliteQueue).then((val) {
+        return val.runQuery(query);
+      });
+      return data != null;
+    } on PlatformException catch (e) {
+      MyLogger("DB Platform Exception").e(e.toString());
+      return false;
+    } catch (e) {
+      MyLogger("DB").e(e.toString());
+      return false;
+    }
+  } */
+
   Future<bool> fillBatchDataIntoDB(List<Street> streets) async {
     MyLogger("Fill data into DB").i(streets.length.toString());
     List<String> queries = [];
     for (var street in streets) {
-      queries.add(street.insertQuery);
+      queries.add(street.insertReplaceQuery);
     }
 
     try {
       //MyLogger("Query Length").i(queries.toString());
       return (await spatialite).executeQueriesWithTransaction(queries);
     } on PlatformException catch (e) {
-      MyLogger("DB Platform Exception").e(e.toString());  
+      MyLogger("DB Platform Exception").e(e.toString());
+      return false;
+    } catch (e) {
+      MyLogger("DB").e(e.toString());
+      return false;
+    }
+  }
+
+  Future<bool> updateStreet(UpdateData street, int id) async {
+    List<String> queries = [];
+    var query =
+        "UPDATE street SET truk = ${street.truk}, pickup = ${street.pickup}, roda3 = ${street.roda3}, last_modified_time = datetime('now', 'localtime') WHERE id = $id;";
+    queries.add(query);
+    try {
+      return (await spatialite).executeQueriesWithTransaction(queries);
+    } on PlatformException catch (e) {
+      MyLogger("DB Platform Exception").e(e.toString());
       return false;
     } catch (e) {
       MyLogger("DB").e(e.toString());

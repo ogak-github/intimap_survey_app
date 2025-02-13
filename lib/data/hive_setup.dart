@@ -18,5 +18,7 @@ class HiveSetup {
     if (box.isEmpty) {
       box.put('base_url', 'https://7ae8-112-78-165-162.ngrok-free.app');
     }
+
+    await Hive.openBox('street');
   }
 }

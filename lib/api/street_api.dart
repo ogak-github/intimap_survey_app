@@ -4,6 +4,7 @@ import 'dart:isolate';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:survey_app/api/dio_client.dart';
+import 'package:survey_app/utils/app_logger.dart';
 
 import '../model/street.dart';
 
@@ -52,6 +53,21 @@ class StreetAPI {
       return isolatedStreets;
     } catch (e) {
       log(e.toString());
+      rethrow;
+    }
+  }
+
+  Future<void> updateBulk(List<Street> newStreets) async {
+    try {
+      final response = await _dioClient.put(
+        '/bulk-update',
+        data: newStreets,
+      );
+      if (response.statusCode != 200) {
+        return;
+      }
+    } catch (e) {
+      MyLogger("API Error").e(e.toString());
       rethrow;
     }
   }

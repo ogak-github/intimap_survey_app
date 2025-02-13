@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:survey_app/app.dart';
-import 'package:survey_app/ui/map_widget.dart';
 import 'package:survey_app/ui/select_server_page.dart';
 
 void main() {

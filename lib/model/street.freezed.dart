@@ -349,3 +349,177 @@ abstract class _Street extends Street {
   _$$StreetImplCopyWith<_$StreetImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
+
+Metadata _$MetadataFromJson(Map<String, dynamic> json) {
+  return _Metadata.fromJson(json);
+}
+
+/// @nodoc
+mixin _$Metadata {
+  String? get notes => throw _privateConstructorUsedError;
+  bool? get updated => throw _privateConstructorUsedError;
+
+  /// Serializes this Metadata to a JSON map.
+  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
+
+  /// Create a copy of Metadata
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  $MetadataCopyWith<Metadata> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class $MetadataCopyWith<$Res> {
+  factory $MetadataCopyWith(Metadata value, $Res Function(Metadata) then) =
+      _$MetadataCopyWithImpl<$Res, Metadata>;
+  @useResult
+  $Res call({String? notes, bool? updated});
+}
+
+/// @nodoc
+class _$MetadataCopyWithImpl<$Res, $Val extends Metadata>
+    implements $MetadataCopyWith<$Res> {
+  _$MetadataCopyWithImpl(this._value, this._then);
+
+  // ignore: unused_field
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
+
+  /// Create a copy of Metadata
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? notes = freezed,
+    Object? updated = freezed,
+  }) {
+    return _then(_value.copyWith(
+      notes: freezed == notes
+          ? _value.notes
+          : notes // ignore: cast_nullable_to_non_nullable
+              as String?,
+      updated: freezed == updated
+          ? _value.updated
+          : updated // ignore: cast_nullable_to_non_nullable
+              as bool?,
+    ) as $Val);
+  }
+}
+
+/// @nodoc
+abstract class _$$MetadataImplCopyWith<$Res>
+    implements $MetadataCopyWith<$Res> {
+  factory _$$MetadataImplCopyWith(
+          _$MetadataImpl value, $Res Function(_$MetadataImpl) then) =
+      __$$MetadataImplCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call({String? notes, bool? updated});
+}
+
+/// @nodoc
+class __$$MetadataImplCopyWithImpl<$Res>
+    extends _$MetadataCopyWithImpl<$Res, _$MetadataImpl>
+    implements _$$MetadataImplCopyWith<$Res> {
+  __$$MetadataImplCopyWithImpl(
+      _$MetadataImpl _value, $Res Function(_$MetadataImpl) _then)
+      : super(_value, _then);
+
+  /// Create a copy of Metadata
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? notes = freezed,
+    Object? updated = freezed,
+  }) {
+    return _then(_$MetadataImpl(
+      notes: freezed == notes
+          ? _value.notes
+          : notes // ignore: cast_nullable_to_non_nullable
+              as String?,
+      updated: freezed == updated
+          ? _value.updated
+          : updated // ignore: cast_nullable_to_non_nullable
+              as bool?,
+    ));
+  }
+}
+
+/// @nodoc
+@JsonSerializable()
+class _$MetadataImpl with DiagnosticableTreeMixin implements _Metadata {
+  const _$MetadataImpl({this.notes, this.updated});
+
+  factory _$MetadataImpl.fromJson(Map<String, dynamic> json) =>
+      _$$MetadataImplFromJson(json);
+
+  @override
+  final String? notes;
+  @override
+  final bool? updated;
+
+  @override
+  String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
+    return 'Metadata(notes: $notes, updated: $updated)';
+  }
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties
+      ..add(DiagnosticsProperty('type', 'Metadata'))
+      ..add(DiagnosticsProperty('notes', notes))
+      ..add(DiagnosticsProperty('updated', updated));
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$MetadataImpl &&
+            (identical(other.notes, notes) || other.notes == notes) &&
+            (identical(other.updated, updated) || other.updated == updated));
+  }
+
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  int get hashCode => Object.hash(runtimeType, notes, updated);
+
+  /// Create a copy of Metadata
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$MetadataImplCopyWith<_$MetadataImpl> get copyWith =>
+      __$$MetadataImplCopyWithImpl<_$MetadataImpl>(this, _$identity);
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$MetadataImplToJson(
+      this,
+    );
+  }
+}
+
+abstract class _Metadata implements Metadata {
+  const factory _Metadata({final String? notes, final bool? updated}) =
+      _$MetadataImpl;
+
+  factory _Metadata.fromJson(Map<String, dynamic> json) =
+      _$MetadataImpl.fromJson;
+
+  @override
+  String? get notes;
+  @override
+  bool? get updated;
+
+  /// Create a copy of Metadata
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$MetadataImplCopyWith<_$MetadataImpl> get copyWith =>
+      throw _privateConstructorUsedError;
+}

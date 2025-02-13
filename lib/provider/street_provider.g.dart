@@ -171,7 +171,7 @@ class _StreetProviderProviderElement
   int get page => (origin as StreetProviderProvider).page;
 }
 
-String _$loadAllStreetHash() => r'f86ab2a810b74b19f055f92eb41d6b7e933662aa';
+String _$loadAllStreetHash() => r'4a09e0e750e04daec206767b1a6de8d3495e8be3';
 
 /// See also [LoadAllStreet].
 @ProviderFor(LoadAllStreet)
@@ -187,12 +187,12 @@ final loadAllStreetProvider =
 );
 
 typedef _$LoadAllStreet = AutoDisposeAsyncNotifier<void>;
-String _$drawStreetHash() => r'20b5cbde0f30317b7f0b1f437b39b10de8facbbf';
+String _$drawStreetHash() => r'2c6fd32c710a6e598affb26aef6feeaff2131bfc';
 
 /// See also [DrawStreet].
 @ProviderFor(DrawStreet)
 final drawStreetProvider =
-    AutoDisposeAsyncNotifierProvider<DrawStreet, Set<Polyline>>.internal(
+    AsyncNotifierProvider<DrawStreet, Set<Polyline>>.internal(
   DrawStreet.new,
   name: r'drawStreetProvider',
   debugGetCreateSourceHash:
@@ -201,6 +201,54 @@ final drawStreetProvider =
   allTransitiveDependencies: null,
 );
 
-typedef _$DrawStreet = AutoDisposeAsyncNotifier<Set<Polyline>>;
+typedef _$DrawStreet = AsyncNotifier<Set<Polyline>>;
+String _$loadedStreetDataHash() => r'8407771f3fcbbbf00d1522bf03eb10739273efef';
+
+/// See also [LoadedStreetData].
+@ProviderFor(LoadedStreetData)
+final loadedStreetDataProvider =
+    AutoDisposeAsyncNotifierProvider<LoadedStreetData, List<Street>>.internal(
+  LoadedStreetData.new,
+  name: r'loadedStreetDataProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$loadedStreetDataHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef _$LoadedStreetData = AutoDisposeAsyncNotifier<List<Street>>;
+String _$inMemoryStreetHash() => r'7e516227f499bc3a6cf172c7afa94d3277004a20';
+
+/// See also [InMemoryStreet].
+@ProviderFor(InMemoryStreet)
+final inMemoryStreetProvider =
+    AutoDisposeNotifierProvider<InMemoryStreet, List<Street>>.internal(
+  InMemoryStreet.new,
+  name: r'inMemoryStreetProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$inMemoryStreetHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef _$InMemoryStreet = AutoDisposeNotifier<List<Street>>;
+String _$focusedStreetHash() => r'200ce9b64ca10de77178df3a03013ded547dea19';
+
+/// See also [FocusedStreet].
+@ProviderFor(FocusedStreet)
+final focusedStreetProvider =
+    AutoDisposeNotifierProvider<FocusedStreet, Street?>.internal(
+  FocusedStreet.new,
+  name: r'focusedStreetProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$focusedStreetHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef _$FocusedStreet = AutoDisposeNotifier<Street?>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package

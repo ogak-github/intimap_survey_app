@@ -55,10 +55,21 @@ class Street with _$Street {
     }
   }
 
-  String get insertQuery {
+  String get insertReplaceQuery {
     var query =
-        "INSERT INTO street (osm_id, nama, truk, pickup, roda3, last_modified_time, meta, geom) "
+        "REPLACE INTO street (osm_id, nama, truk, pickup, roda3, last_modified_time, meta, geom) "
         "VALUES('$osmId', '$name', $truk, $pickup, $roda3, '$lastModifiedTime','$meta', GeomFromText('$geom', 4326));";
     return query;
   }
+}
+
+
+@freezed
+class Metadata with _$Metadata {
+  const factory Metadata({
+    String? notes,
+    bool? updated,
+  }) = _Metadata;
+
+  factory Metadata.fromJson(Map<String, Object?> json) => _$MetadataFromJson(json);
 }

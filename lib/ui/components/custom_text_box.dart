@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 
 class CustomTextBox extends StatelessWidget {
+  final Widget? widget;
   final String text;
-  const CustomTextBox({super.key, required this.text});
+  const CustomTextBox({super.key, required this.text, this.widget});
 
   @override
   Widget build(BuildContext context) {
@@ -13,13 +14,14 @@ class CustomTextBox extends StatelessWidget {
       elevation: 5,
       child: Padding(
         padding: const EdgeInsets.all(8.0),
-        child: Text(
-          text,
-          style: Theme.of(context)
-              .textTheme
-              .bodyMedium!
-              .copyWith(color: Theme.of(context).colorScheme.onPrimary),
-        ),
+        child: widget ??
+            Text(
+              text,
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium!
+                  .copyWith(color: Theme.of(context).colorScheme.onPrimary),
+            ),
       ),
     );
   }

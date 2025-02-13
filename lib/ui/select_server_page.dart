@@ -3,6 +3,7 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:survey_app/api/street_api.dart';
+import 'package:survey_app/provider/street_provider.dart';
 
 import '../provider/server_state.dart';
 import 'map_widget.dart';
@@ -22,16 +23,22 @@ class SelectServerPage extends HookConsumerWidget {
         data: (data) {
           return Center(
             child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Text(data),
-                ElevatedButton(
-                    onPressed: () {
-                      Navigator.of(context)
-                          .push(MaterialPageRoute(builder: (context) {
-                        return const MapView();
-                      }));
-                    },
-                    child: const Text('Select'))
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: MediaQuery.of(context).size.width,
+                  child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.of(context)
+                            .push(MaterialPageRoute(builder: (context) {
+                          return const MapView();
+                        }));
+                      },
+                      child: const Text('Select')),
+                )
               ],
             ),
           );

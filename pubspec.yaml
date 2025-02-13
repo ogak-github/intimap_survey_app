@@ -61,6 +61,7 @@ dependencies:
   hive: ^2.2.3
   hive_flutter: ^1.1.0
   flutter_easyloading: ^3.0.5
+  sliding_up_panel2: ^3.3.0+1
 
 
 
