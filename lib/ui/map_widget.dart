@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:location/location.dart';
 import 'package:sliding_up_panel2/sliding_up_panel2.dart';
 import 'package:survey_app/data/street_spatialite.dart';
 import 'package:survey_app/provider/hive_street_provider.dart';
@@ -34,7 +33,6 @@ class _MapViewState extends ConsumerState<MapView> with WidgetsBindingObserver {
   double longitude = 113.9213;
   Set<Polyline> _polylines = {};
   final Set<Polyline> _selectedPolyline = {};
-  final bool _followLocation = false;
   bool _myLocationEnabled = false;
   Timer? timer;
 
@@ -347,7 +345,7 @@ class GpsFab extends HookConsumerWidget {
           .read(loadingStateProvider.notifier)
           .setLoading(isLoading: true, infoText: "Finding your location...");
 
-      double zoom = await controller.getZoomLevel();
+     // double zoom = await controller.getZoomLevel();
       final location = await ref.read(myLocationProvider.future);
 
       if (location != null) {
