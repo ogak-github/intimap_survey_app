@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:developer';
 import 'dart:isolate';
 
@@ -57,18 +58,25 @@ class StreetAPI {
     }
   }
 
-  Future<void> updateBulk(List<Street> newStreets) async {
+  Future<bool> updateBulk(List<Street> newStreets) async {
     try {
+      final jsonData = newStreets.map((e) => jsonEncode(e)).toList();
       final response = await _dioClient.put(
         '/bulk-update',
-        data: newStreets,
+        data: jsonData.toString(),
       );
+      MyLogger("Status code").i("${response.statusCode}");
       if (response.statusCode != 200) {
-        return;
+        return false;
       }
+
+      MyLogger("Update bulk status Code: ${response.statusCode}")
+          .i(response.data.toString());
+
+      return true;
     } catch (e) {
       MyLogger("API Error").e(e.toString());
-      rethrow;
+      return false;
     }
   }
 }

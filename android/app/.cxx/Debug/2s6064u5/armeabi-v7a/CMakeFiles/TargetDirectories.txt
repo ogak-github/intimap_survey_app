@@ -1,0 +1,2 @@
+/home/ogak/Documents/Projects/survey_app/android/app/.cxx/Debug/2s6064u5/armeabi-v7a/CMakeFiles/edit_cache.dir
+/home/ogak/Documents/Projects/survey_app/android/app/.cxx/Debug/2s6064u5/armeabi-v7a/CMakeFiles/rebuild_cache.dir

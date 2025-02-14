@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:geobase/geobase.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 part 'street.freezed.dart';
 part 'street.g.dart';
@@ -12,15 +13,27 @@ part 'street.g.dart';
 class Street with _$Street {
   const Street._();
 
+  @HiveType(typeId: 1, adapterName: "StreetAdapter")
   const factory Street({
+    @HiveField(0)
     required int id,
-    @JsonKey(name: 'osm_id') required String osmId,
+    @JsonKey(name: 'osm_id') 
+    @HiveField(1)
+    required String osmId,
+    @HiveField(2)
     String? name,
+    @HiveField(3)
     int? truk,
+    @HiveField(4)
     int? pickup,
+    @HiveField(5)
     int? roda3,
+    @HiveField(6)
     String? meta,
-    @JsonKey(name: 'last_modified_time') required DateTime lastModifiedTime,
+    @JsonKey(name: 'last_modified_time') 
+    @HiveField(7)
+    required DateTime lastModifiedTime,
+    @HiveField(8)
     required String geom,
   }) = _Street;
 

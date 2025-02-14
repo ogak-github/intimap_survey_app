@@ -3,6 +3,68 @@
 part of 'street.dart';
 
 // **************************************************************************
+// TypeAdapterGenerator
+// **************************************************************************
+
+class StreetAdapter extends TypeAdapter<_$StreetImpl> {
+  @override
+  final int typeId = 1;
+
+  @override
+  _$StreetImpl read(BinaryReader reader) {
+    final numOfFields = reader.readByte();
+    final fields = <int, dynamic>{
+      for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
+    };
+    return _$StreetImpl(
+      id: fields[0] as int,
+      osmId: fields[1] as String,
+      name: fields[2] as String?,
+      truk: fields[3] as int?,
+      pickup: fields[4] as int?,
+      roda3: fields[5] as int?,
+      meta: fields[6] as String?,
+      lastModifiedTime: fields[7] as DateTime,
+      geom: fields[8] as String,
+    );
+  }
+
+  @override
+  void write(BinaryWriter writer, _$StreetImpl obj) {
+    writer
+      ..writeByte(9)
+      ..writeByte(0)
+      ..write(obj.id)
+      ..writeByte(1)
+      ..write(obj.osmId)
+      ..writeByte(2)
+      ..write(obj.name)
+      ..writeByte(3)
+      ..write(obj.truk)
+      ..writeByte(4)
+      ..write(obj.pickup)
+      ..writeByte(5)
+      ..write(obj.roda3)
+      ..writeByte(6)
+      ..write(obj.meta)
+      ..writeByte(7)
+      ..write(obj.lastModifiedTime)
+      ..writeByte(8)
+      ..write(obj.geom);
+  }
+
+  @override
+  int get hashCode => typeId.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is StreetAdapter &&
+          runtimeType == other.runtimeType &&
+          typeId == other.typeId;
+}
+
+// **************************************************************************
 // JsonSerializableGenerator
 // **************************************************************************
 

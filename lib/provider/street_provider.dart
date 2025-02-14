@@ -7,6 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:geobase/geobase.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:location/location.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:survey_app/data/street_spatialite.dart';
@@ -16,18 +18,18 @@ import 'package:survey_app/utils/app_logger.dart';
 
 import '../api/street_api.dart';
 import '../model/street.dart';
+import 'hive_street_provider.dart';
 
 part 'street_provider.g.dart';
 
 final streetData = StreetData(StreetSpatialite());
 
-@Riverpod(keepAlive: true)
-class StreetProvider extends _$StreetProvider {
-  @override
-  FutureOr<List<Street>> build({int page = 1}) {
-    final api = ref.watch(streetAPIProvider);
-    return api.getStreet(page: page);
-  }
+@riverpod
+Future<bool> updateData(Ref ref, List<Street> newStreets) async {
+  final api = ref.watch(streetAPIProvider);
+  bool result = await api.updateBulk(newStreets);
+
+  return result;
 }
 
 @riverpod
@@ -35,7 +37,20 @@ class LoadAllStreet extends _$LoadAllStreet {
   @override
   FutureOr<void> build() async {
     MyLogger("Load all street").i("Called");
-    EasyLoading.show(status: 'Loading streets from server...');
+    EasyLoading.show(status: 'Sync data...');
+    final streetBox = Hive.box<Street>('streets');
+    if (streetBox.isNotEmpty) {
+      final data = streetBox.values.toList();
+      final providerResult = await ref.read(updateDataProvider(data).future);
+
+      if (providerResult) {
+        for (var street in data) {
+          ref.read(hiveStreetProvider.notifier).removeStreet(street);
+        }
+      } else {
+        MyLogger("Upload failed").e("data not uploaded");
+      }
+    }
 
     final api = ref.watch(streetAPIProvider);
     var streets = await api.loadAll();
@@ -43,7 +58,7 @@ class LoadAllStreet extends _$LoadAllStreet {
     EasyLoading.dismiss();
 
     /// call fillDataIntoDB
-    EasyLoading.show(status: 'Sync data...');
+    EasyLoading.show(status: 'Processing data...');
     await runInBackground(streets);
     EasyLoading.dismiss();
   }
@@ -53,6 +68,8 @@ class LoadAllStreet extends _$LoadAllStreet {
     await Isolate.spawn(_processData, [streets, response.sendPort]);
     var processedStreets = await response.first;
     await streetData.fillBatchDataIntoDB(processedStreets);
+    ref.read(inMemoryStreetProvider).clear();
+    ref.read(inMemoryStreetProvider.notifier).addAll(streets);
   }
 
   static void _processData(List<dynamic> args) async {
@@ -67,23 +84,26 @@ class DrawStreet extends _$DrawStreet {
   @override
   FutureOr<Set<Polyline>> build() async {
     MyLogger("Draw street").i("Called");
-    var inMemory = ref.watch(inMemoryStreetProvider);
-    if (inMemory.isEmpty) {
-      final streetData = await ref.read(loadedStreetDataProvider.future);
-      ref.read(inMemoryStreetProvider.notifier).addAll(streetData);
-      inMemory = ref.read(inMemoryStreetProvider);
-    }
     //List<Street> data = [];
     Set<Polyline> polylines = {};
 
     try {
-      ref.listen<LocationData?>(myCurrentLocationProvider, (previous, next) {
-        if (next != null) {
-          onLocationChanged(inMemory, next);
-          /*  MyLogger("Location changed")
+      final locPermission = await ref.read(checkPermissionProvider.future);
+      var inMemory = ref.read(inMemoryStreetProvider);
+      if (inMemory.isEmpty) {
+        final streetData = await ref.read(loadedStreetDataProvider.future);
+        ref.read(inMemoryStreetProvider.notifier).addAll(streetData);
+        inMemory = ref.read(inMemoryStreetProvider);
+      }
+      if (locPermission == true) {
+        ref.listen<LocationData?>(myCurrentLocationProvider, (previous, next) {
+          if (next != null) {
+            onLocationChanged(inMemory, next);
+            /*  MyLogger("Location changed")
               .i("User moved: ${next.latitude}, ${next.longitude}"); */
-        }
-      });
+          }
+        });
+      }
       MyLogger("Draw street").i("${inMemory.length}");
     } catch (e) {
       MyLogger("Error").e(e.toString());
@@ -207,7 +227,8 @@ class InMemoryStreet extends _$InMemoryStreet {
   }
 
   void addAll(List<Street> streets) {
-    state = [...state, ...streets];
+    MyLogger("In Memory Street Add").d(streets.length.toString());
+    state = [...state.toSet(), ...streets.toSet()];
     ref.notifyListeners();
   }
 

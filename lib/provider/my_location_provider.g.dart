@@ -85,7 +85,7 @@ final checkPermissionProvider =
 );
 
 typedef _$CheckPermission = AutoDisposeAsyncNotifier<bool>;
-String _$requestPermissionHash() => r'49682a4cf894a498df87f3eab9e237a9a976d6c4';
+String _$requestPermissionHash() => r'07717c63bec9ccfbfd7c43e49f8d27ef39b3ae26';
 
 /// See also [RequestPermission].
 @ProviderFor(RequestPermission)
@@ -101,7 +101,7 @@ final requestPermissionProvider =
 );
 
 typedef _$RequestPermission = AutoDisposeNotifier<void>;
-String _$myCurrentLocationHash() => r'1c039949742e4dc1a7af06e60487843869601c12';
+String _$myCurrentLocationHash() => r'4a7a65d707ca77224472da30794ce189ec0bbe5e';
 
 /// See also [MyCurrentLocation].
 @ProviderFor(MyCurrentLocation)

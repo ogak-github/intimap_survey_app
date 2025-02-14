@@ -5,7 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:location/location.dart';
 import 'package:sliding_up_panel2/sliding_up_panel2.dart';
+import 'package:survey_app/data/street_spatialite.dart';
+import 'package:survey_app/provider/hive_street_provider.dart';
 import 'package:survey_app/provider/loading_state.dart';
 import 'package:survey_app/provider/my_location_provider.dart';
 import 'package:survey_app/provider/street_provider.dart';
@@ -32,11 +35,48 @@ class _MapViewState extends ConsumerState<MapView> with WidgetsBindingObserver {
   Set<Polyline> _polylines = {};
   final Set<Polyline> _selectedPolyline = {};
   final bool _followLocation = false;
+  bool _myLocationEnabled = false;
+  Timer? timer;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+
+    timer = Timer.periodic(
+        const Duration(seconds: 15), (Timer t) => checkForChanges());
+  }
+
+  @override
+  dispose() {
+    super.dispose();
+    timer?.cancel();
+  }
+
+  Future<void> _checkAndSyncDatabase() async {
+    final spatialiteDb = StreetData(StreetSpatialite());
+    var dataExist = await spatialiteDb.checkDataExist();
+    if (!dataExist) {
+      MyLogger("Table empty").i("Loading data from server...");
+      await ref.read(loadAllStreetProvider.future);
+    }
+  }
+
+  checkForChanges() async {
+    final data = ref.read(hiveStreetProvider);
+    MyLogger("Changes Recorded").i(data.length.toString());
+
+    if (data.isNotEmpty) {
+      final providerResult = await ref.read(updateDataProvider(data).future);
+
+      if (providerResult) {
+        for (var street in data) {
+          ref.read(hiveStreetProvider.notifier).removeStreet(street);
+        }
+      } else {
+        MyLogger("Upload failed").e("data not uploaded");
+      }
+    }
   }
 
   void _onMapCreated(GoogleMapController controller) {
@@ -56,6 +96,9 @@ class _MapViewState extends ConsumerState<MapView> with WidgetsBindingObserver {
     final panelCtrl = ref.watch(panelController);
     final selectedStreet = ref.watch(focusedStreetProvider);
     final loadDataNotifier = ref.watch(loadedStreetDataProvider);
+    var permission = ref.watch(checkPermissionProvider);
+    final inMemoryStreet = ref.watch(inMemoryStreetProvider);
+
     // final loadPolyline = ref.watch(drawStreetProvider);
 /*     useEffect(() {
       loadPolyline.whenData((street) {
@@ -67,12 +110,32 @@ class _MapViewState extends ConsumerState<MapView> with WidgetsBindingObserver {
       return null;
     }, [loadPolyline]); */
 
-    ref.listen(drawStreetProvider.future, (previous, next) async {
-      var street = await next;
-      setState(() {
-        _polylines = street;
+    useEffect(() {
+      _checkAndSyncDatabase().then((v) async {
+        await ref.read(loadedStreetDataProvider.future);
       });
-    });
+      return null;
+    }, []);
+
+    useEffect(() {
+      permission.whenData((granted) {
+        if (granted) {
+          setState(() {
+            _myLocationEnabled = true;
+          });
+        }
+      });
+      return null;
+    }, [permission]);
+
+    if (inMemoryStreet.isNotEmpty) {
+      ref.listen(drawStreetProvider.future, (previous, next) async {
+        var street = await next;
+        setState(() {
+          _polylines = street;
+        });
+      });
+    }
 
     useEffect(() {
       if (selectedStreet != null) {
@@ -98,6 +161,30 @@ class _MapViewState extends ConsumerState<MapView> with WidgetsBindingObserver {
       return null;
     }, [selectedStreet]);
 
+    void showSyncDialog() {
+      showDialog(
+          context: context,
+          builder: (context) {
+            return AlertDialog(
+              title: const Text("Sync Data"),
+              content: const Text("Are you sure you want to sync data?"),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text("Cancel"),
+                ),
+                TextButton(
+                  child: const Text("Sync"),
+                  onPressed: () {
+                    ref.read(loadAllStreetProvider);
+                    Navigator.of(context).pop();
+                  },
+                )
+              ],
+            );
+          });
+    }
+
     return Scaffold(
       extendBodyBehindAppBar: true,
       body: SlidingUpPanel(
@@ -116,7 +203,7 @@ class _MapViewState extends ConsumerState<MapView> with WidgetsBindingObserver {
               zoomControlsEnabled: false,
               initialCameraPosition:
                   CameraPosition(target: LatLng(latitude, longitude), zoom: 2),
-              myLocationEnabled: true,
+              myLocationEnabled: _myLocationEnabled,
               myLocationButtonEnabled: false,
               onTap: (arg) async {
                 ref.read(focusedStreetProvider.notifier).clear();
@@ -145,7 +232,12 @@ class _MapViewState extends ConsumerState<MapView> with WidgetsBindingObserver {
                         FloatingActionButton.small(
                           child: const Icon(Icons.sync),
                           onPressed: () {
-                            ref.read(loadAllStreetProvider);
+                            final hiveStreet = ref.read(hiveStreetProvider);
+                            if (hiveStreet.isNotEmpty) {
+                              showSyncDialog();
+                            } else {
+                              ref.read(loadAllStreetProvider);
+                            }
                           },
                         ),
                       ],
@@ -250,6 +342,28 @@ class GpsFab extends HookConsumerWidget {
     var service = ref.watch(checkServiceProvider);
     var permission = ref.watch(checkPermissionProvider);
 
+    Future<void Function()?> getCurrentLocation() async {
+      ref
+          .read(loadingStateProvider.notifier)
+          .setLoading(isLoading: true, infoText: "Finding your location...");
+
+      double zoom = await controller.getZoomLevel();
+      final location = await ref.read(myLocationProvider.future);
+
+      if (location != null) {
+        controller.animateCamera(
+          CameraUpdate.newCameraPosition(
+            CameraPosition(
+                target: LatLng(location.latitude!, location.longitude!),
+                zoom: 16.0),
+          ),
+        );
+      }
+
+      ref.read(loadingStateProvider.notifier).dismiss();
+      return null;
+    }
+
     if (following.value) {
       ref.watch(myLocationProvider.notifier).watchLocation();
       ref.listen(myLocationProvider, (previous, next) {
@@ -293,33 +407,18 @@ class GpsFab extends HookConsumerWidget {
       return null;
     }
 
-    void Function()? onEnablePermission() {
+    Future<void Function()?> onEnablePermission() async {
       if (permissionState.value == false) {
-        ref.read(requestPermissionProvider.notifier).reqAccessLocation();
-        //permission = ref.refresh(permissionGrantedProvider);
+        ref
+            .read(requestPermissionProvider.notifier)
+            .reqAccessLocation()
+            .then((val) async {
+          if (val) {
+            await getCurrentLocation();
+            ref.invalidate(drawStreetProvider);
+          }
+        });
       }
-      return null;
-    }
-
-    Future<void Function()?> getCurrentLocation() async {
-      ref
-          .read(loadingStateProvider.notifier)
-          .setLoading(isLoading: true, infoText: "Finding your location...");
-
-      double zoom = await controller.getZoomLevel();
-      final location = await ref.read(myLocationProvider.future);
-
-      if (location != null) {
-        controller.animateCamera(
-          CameraUpdate.newCameraPosition(
-            CameraPosition(
-                target: LatLng(location.latitude!, location.longitude!),
-                zoom: 16.0),
-          ),
-        );
-      }
-
-      ref.read(loadingStateProvider.notifier).dismiss();
       return null;
     }
 

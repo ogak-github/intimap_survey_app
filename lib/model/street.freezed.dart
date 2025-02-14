@@ -20,16 +20,25 @@ Street _$StreetFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$Street {
+  @HiveField(0)
   int get id => throw _privateConstructorUsedError;
   @JsonKey(name: 'osm_id')
+  @HiveField(1)
   String get osmId => throw _privateConstructorUsedError;
+  @HiveField(2)
   String? get name => throw _privateConstructorUsedError;
+  @HiveField(3)
   int? get truk => throw _privateConstructorUsedError;
+  @HiveField(4)
   int? get pickup => throw _privateConstructorUsedError;
+  @HiveField(5)
   int? get roda3 => throw _privateConstructorUsedError;
+  @HiveField(6)
   String? get meta => throw _privateConstructorUsedError;
   @JsonKey(name: 'last_modified_time')
+  @HiveField(7)
   DateTime get lastModifiedTime => throw _privateConstructorUsedError;
+  @HiveField(8)
   String get geom => throw _privateConstructorUsedError;
 
   /// Serializes this Street to a JSON map.
@@ -47,15 +56,17 @@ abstract class $StreetCopyWith<$Res> {
       _$StreetCopyWithImpl<$Res, Street>;
   @useResult
   $Res call(
-      {int id,
-      @JsonKey(name: 'osm_id') String osmId,
-      String? name,
-      int? truk,
-      int? pickup,
-      int? roda3,
-      String? meta,
-      @JsonKey(name: 'last_modified_time') DateTime lastModifiedTime,
-      String geom});
+      {@HiveField(0) int id,
+      @JsonKey(name: 'osm_id') @HiveField(1) String osmId,
+      @HiveField(2) String? name,
+      @HiveField(3) int? truk,
+      @HiveField(4) int? pickup,
+      @HiveField(5) int? roda3,
+      @HiveField(6) String? meta,
+      @JsonKey(name: 'last_modified_time')
+      @HiveField(7)
+      DateTime lastModifiedTime,
+      @HiveField(8) String geom});
 }
 
 /// @nodoc
@@ -132,15 +143,17 @@ abstract class _$$StreetImplCopyWith<$Res> implements $StreetCopyWith<$Res> {
   @override
   @useResult
   $Res call(
-      {int id,
-      @JsonKey(name: 'osm_id') String osmId,
-      String? name,
-      int? truk,
-      int? pickup,
-      int? roda3,
-      String? meta,
-      @JsonKey(name: 'last_modified_time') DateTime lastModifiedTime,
-      String geom});
+      {@HiveField(0) int id,
+      @JsonKey(name: 'osm_id') @HiveField(1) String osmId,
+      @HiveField(2) String? name,
+      @HiveField(3) int? truk,
+      @HiveField(4) int? pickup,
+      @HiveField(5) int? roda3,
+      @HiveField(6) String? meta,
+      @JsonKey(name: 'last_modified_time')
+      @HiveField(7)
+      DateTime lastModifiedTime,
+      @HiveField(8) String geom});
 }
 
 /// @nodoc
@@ -209,41 +222,53 @@ class __$$StreetImplCopyWithImpl<$Res>
 
 /// @nodoc
 @JsonSerializable()
+@HiveType(typeId: 1, adapterName: "StreetAdapter")
 class _$StreetImpl extends _Street with DiagnosticableTreeMixin {
   const _$StreetImpl(
-      {required this.id,
-      @JsonKey(name: 'osm_id') required this.osmId,
-      this.name,
-      this.truk,
-      this.pickup,
-      this.roda3,
-      this.meta,
-      @JsonKey(name: 'last_modified_time') required this.lastModifiedTime,
-      required this.geom})
+      {@HiveField(0) required this.id,
+      @JsonKey(name: 'osm_id') @HiveField(1) required this.osmId,
+      @HiveField(2) this.name,
+      @HiveField(3) this.truk,
+      @HiveField(4) this.pickup,
+      @HiveField(5) this.roda3,
+      @HiveField(6) this.meta,
+      @JsonKey(name: 'last_modified_time')
+      @HiveField(7)
+      required this.lastModifiedTime,
+      @HiveField(8) required this.geom})
       : super._();
 
   factory _$StreetImpl.fromJson(Map<String, dynamic> json) =>
       _$$StreetImplFromJson(json);
 
   @override
+  @HiveField(0)
   final int id;
   @override
   @JsonKey(name: 'osm_id')
+  @HiveField(1)
   final String osmId;
   @override
+  @HiveField(2)
   final String? name;
   @override
+  @HiveField(3)
   final int? truk;
   @override
+  @HiveField(4)
   final int? pickup;
   @override
+  @HiveField(5)
   final int? roda3;
   @override
+  @HiveField(6)
   final String? meta;
   @override
   @JsonKey(name: 'last_modified_time')
+  @HiveField(7)
   final DateTime lastModifiedTime;
   @override
+  @HiveField(8)
   final String geom;
 
   @override
@@ -307,39 +332,49 @@ class _$StreetImpl extends _Street with DiagnosticableTreeMixin {
 
 abstract class _Street extends Street {
   const factory _Street(
-      {required final int id,
-      @JsonKey(name: 'osm_id') required final String osmId,
-      final String? name,
-      final int? truk,
-      final int? pickup,
-      final int? roda3,
-      final String? meta,
+      {@HiveField(0) required final int id,
+      @JsonKey(name: 'osm_id') @HiveField(1) required final String osmId,
+      @HiveField(2) final String? name,
+      @HiveField(3) final int? truk,
+      @HiveField(4) final int? pickup,
+      @HiveField(5) final int? roda3,
+      @HiveField(6) final String? meta,
       @JsonKey(name: 'last_modified_time')
+      @HiveField(7)
       required final DateTime lastModifiedTime,
-      required final String geom}) = _$StreetImpl;
+      @HiveField(8) required final String geom}) = _$StreetImpl;
   const _Street._() : super._();
 
   factory _Street.fromJson(Map<String, dynamic> json) = _$StreetImpl.fromJson;
 
   @override
+  @HiveField(0)
   int get id;
   @override
   @JsonKey(name: 'osm_id')
+  @HiveField(1)
   String get osmId;
   @override
+  @HiveField(2)
   String? get name;
   @override
+  @HiveField(3)
   int? get truk;
   @override
+  @HiveField(4)
   int? get pickup;
   @override
+  @HiveField(5)
   int? get roda3;
   @override
+  @HiveField(6)
   String? get meta;
   @override
   @JsonKey(name: 'last_modified_time')
+  @HiveField(7)
   DateTime get lastModifiedTime;
   @override
+  @HiveField(8)
   String get geom;
 
   /// Create a copy of Street

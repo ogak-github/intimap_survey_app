@@ -4,6 +4,7 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:survey_app/model/street.dart';
 import 'package:survey_app/model/update_data.dart';
+import 'package:survey_app/provider/hive_street_provider.dart';
 import 'package:survey_app/provider/street_provider.dart';
 import 'package:survey_app/ui/map_widget.dart';
 import 'package:survey_app/utils/app_logger.dart';
@@ -54,10 +55,12 @@ class PanelBuilderWidget extends HookConsumerWidget {
       /// Directly update sqlite
       await streetData.updateStreet(data, selectedStreet.id);
       ref.read(drawStreetProvider.notifier).updateStreetData(newData);
+      ref.read(hiveStreetProvider.notifier).addStreet(newData);
 
       isLoading.value = false;
       panelCtrl.close();
       EasyLoading.dismiss();
+      ref.invalidate(drawStreetProvider);
     }
 
     return selectedStreet != null

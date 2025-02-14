@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:location/location.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -71,12 +72,13 @@ class RequestPermission extends _$RequestPermission {
     await lc.requestService();
   }
 
-  void reqAccessLocation() async {
+  Future<bool> reqAccessLocation() async {
     final lc = Location();
     var req = await lc.requestPermission();
     if (req == PermissionStatus.granted) {
-      await lc.getLocation();
+      return true;
     }
+    return false;
   }
 }
 

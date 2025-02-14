@@ -6,7 +6,7 @@ part of 'street_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$streetProviderHash() => r'7ff4ac9face2778f260379f6379c20c71f7a1f2f';
+String _$updateDataHash() => r'0e60897db2aa366581f31ed5e4e1c2172adbdc12';
 
 /// Copied from Dart SDK
 class _SystemHash {
@@ -29,38 +29,30 @@ class _SystemHash {
   }
 }
 
-abstract class _$StreetProvider extends BuildlessAsyncNotifier<List<Street>> {
-  late final int page;
+/// See also [updateData].
+@ProviderFor(updateData)
+const updateDataProvider = UpdateDataFamily();
 
-  FutureOr<List<Street>> build({
-    int page = 1,
-  });
-}
+/// See also [updateData].
+class UpdateDataFamily extends Family<AsyncValue<bool>> {
+  /// See also [updateData].
+  const UpdateDataFamily();
 
-/// See also [StreetProvider].
-@ProviderFor(StreetProvider)
-const streetProviderProvider = StreetProviderFamily();
-
-/// See also [StreetProvider].
-class StreetProviderFamily extends Family<AsyncValue<List<Street>>> {
-  /// See also [StreetProvider].
-  const StreetProviderFamily();
-
-  /// See also [StreetProvider].
-  StreetProviderProvider call({
-    int page = 1,
-  }) {
-    return StreetProviderProvider(
-      page: page,
+  /// See also [updateData].
+  UpdateDataProvider call(
+    List<Street> newStreets,
+  ) {
+    return UpdateDataProvider(
+      newStreets,
     );
   }
 
   @override
-  StreetProviderProvider getProviderOverride(
-    covariant StreetProviderProvider provider,
+  UpdateDataProvider getProviderOverride(
+    covariant UpdateDataProvider provider,
   ) {
     return call(
-      page: provider.page,
+      provider.newStreets,
     );
   }
 
@@ -76,80 +68,75 @@ class StreetProviderFamily extends Family<AsyncValue<List<Street>>> {
       _allTransitiveDependencies;
 
   @override
-  String? get name => r'streetProviderProvider';
+  String? get name => r'updateDataProvider';
 }
 
-/// See also [StreetProvider].
-class StreetProviderProvider
-    extends AsyncNotifierProviderImpl<StreetProvider, List<Street>> {
-  /// See also [StreetProvider].
-  StreetProviderProvider({
-    int page = 1,
-  }) : this._internal(
-          () => StreetProvider()..page = page,
-          from: streetProviderProvider,
-          name: r'streetProviderProvider',
+/// See also [updateData].
+class UpdateDataProvider extends AutoDisposeFutureProvider<bool> {
+  /// See also [updateData].
+  UpdateDataProvider(
+    List<Street> newStreets,
+  ) : this._internal(
+          (ref) => updateData(
+            ref as UpdateDataRef,
+            newStreets,
+          ),
+          from: updateDataProvider,
+          name: r'updateDataProvider',
           debugGetCreateSourceHash:
               const bool.fromEnvironment('dart.vm.product')
                   ? null
-                  : _$streetProviderHash,
-          dependencies: StreetProviderFamily._dependencies,
+                  : _$updateDataHash,
+          dependencies: UpdateDataFamily._dependencies,
           allTransitiveDependencies:
-              StreetProviderFamily._allTransitiveDependencies,
-          page: page,
+              UpdateDataFamily._allTransitiveDependencies,
+          newStreets: newStreets,
         );
 
-  StreetProviderProvider._internal(
+  UpdateDataProvider._internal(
     super._createNotifier, {
     required super.name,
     required super.dependencies,
     required super.allTransitiveDependencies,
     required super.debugGetCreateSourceHash,
     required super.from,
-    required this.page,
+    required this.newStreets,
   }) : super.internal();
 
-  final int page;
+  final List<Street> newStreets;
 
   @override
-  FutureOr<List<Street>> runNotifierBuild(
-    covariant StreetProvider notifier,
+  Override overrideWith(
+    FutureOr<bool> Function(UpdateDataRef provider) create,
   ) {
-    return notifier.build(
-      page: page,
-    );
-  }
-
-  @override
-  Override overrideWith(StreetProvider Function() create) {
     return ProviderOverride(
       origin: this,
-      override: StreetProviderProvider._internal(
-        () => create()..page = page,
+      override: UpdateDataProvider._internal(
+        (ref) => create(ref as UpdateDataRef),
         from: from,
         name: null,
         dependencies: null,
         allTransitiveDependencies: null,
         debugGetCreateSourceHash: null,
-        page: page,
+        newStreets: newStreets,
       ),
     );
   }
 
   @override
-  AsyncNotifierProviderElement<StreetProvider, List<Street>> createElement() {
-    return _StreetProviderProviderElement(this);
+  AutoDisposeFutureProviderElement<bool> createElement() {
+    return _UpdateDataProviderElement(this);
   }
 
   @override
   bool operator ==(Object other) {
-    return other is StreetProviderProvider && other.page == page;
+    return other is UpdateDataProvider && other.newStreets == newStreets;
   }
 
   @override
   int get hashCode {
     var hash = _SystemHash.combine(0, runtimeType.hashCode);
-    hash = _SystemHash.combine(hash, page.hashCode);
+    hash = _SystemHash.combine(hash, newStreets.hashCode);
 
     return _SystemHash.finish(hash);
   }
@@ -157,21 +144,20 @@ class StreetProviderProvider
 
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
-mixin StreetProviderRef on AsyncNotifierProviderRef<List<Street>> {
-  /// The parameter `page` of this provider.
-  int get page;
+mixin UpdateDataRef on AutoDisposeFutureProviderRef<bool> {
+  /// The parameter `newStreets` of this provider.
+  List<Street> get newStreets;
 }
 
-class _StreetProviderProviderElement
-    extends AsyncNotifierProviderElement<StreetProvider, List<Street>>
-    with StreetProviderRef {
-  _StreetProviderProviderElement(super.provider);
+class _UpdateDataProviderElement extends AutoDisposeFutureProviderElement<bool>
+    with UpdateDataRef {
+  _UpdateDataProviderElement(super.provider);
 
   @override
-  int get page => (origin as StreetProviderProvider).page;
+  List<Street> get newStreets => (origin as UpdateDataProvider).newStreets;
 }
 
-String _$loadAllStreetHash() => r'4a09e0e750e04daec206767b1a6de8d3495e8be3';
+String _$loadAllStreetHash() => r'823383a7a0d24ab3794646b859f911a37b9533d5';
 
 /// See also [LoadAllStreet].
 @ProviderFor(LoadAllStreet)
@@ -187,12 +173,12 @@ final loadAllStreetProvider =
 );
 
 typedef _$LoadAllStreet = AutoDisposeAsyncNotifier<void>;
-String _$drawStreetHash() => r'2c6fd32c710a6e598affb26aef6feeaff2131bfc';
+String _$drawStreetHash() => r'ee7fda8d250769f0fbee99af2784d7477d401054';
 
 /// See also [DrawStreet].
 @ProviderFor(DrawStreet)
 final drawStreetProvider =
-    AsyncNotifierProvider<DrawStreet, Set<Polyline>>.internal(
+    AutoDisposeAsyncNotifierProvider<DrawStreet, Set<Polyline>>.internal(
   DrawStreet.new,
   name: r'drawStreetProvider',
   debugGetCreateSourceHash:
@@ -201,8 +187,8 @@ final drawStreetProvider =
   allTransitiveDependencies: null,
 );
 
-typedef _$DrawStreet = AsyncNotifier<Set<Polyline>>;
-String _$loadedStreetDataHash() => r'8407771f3fcbbbf00d1522bf03eb10739273efef';
+typedef _$DrawStreet = AutoDisposeAsyncNotifier<Set<Polyline>>;
+String _$loadedStreetDataHash() => r'4ea2778dc0dcabde01f17407cc1556733e1d44b9';
 
 /// See also [LoadedStreetData].
 @ProviderFor(LoadedStreetData)
@@ -218,7 +204,7 @@ final loadedStreetDataProvider =
 );
 
 typedef _$LoadedStreetData = AutoDisposeAsyncNotifier<List<Street>>;
-String _$inMemoryStreetHash() => r'7e516227f499bc3a6cf172c7afa94d3277004a20';
+String _$inMemoryStreetHash() => r'108f85fda37c78a42d075dd0fe1485d5e7776bc0';
 
 /// See also [InMemoryStreet].
 @ProviderFor(InMemoryStreet)

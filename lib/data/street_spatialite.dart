@@ -338,4 +338,31 @@ class StreetData {
       return [];
     }
   }
+
+  Future<bool> checkDataExist() async {
+    bool result = false;
+    var query = "SELECT EXISTS(SELECT 1 FROM street)";
+    try {
+      var data = await (sqliteQueue).then((val) {
+        return val.runQuery(query);
+      });
+      MyLogger("Check table").i(data.toString());
+      for (var map in data ?? []) {
+        map.forEach((key, value) {
+          if (value == 1) {
+            result = true;
+            return result;
+          }
+          return false;
+        });
+      }
+      return result;
+    } on PlatformException catch (e) {
+      MyLogger("DB Platform Exception").e(e.toString());
+      return false;
+    } catch (e) {
+      MyLogger("DB").e(e.toString());
+      return false;
+    }
+  }
 }
