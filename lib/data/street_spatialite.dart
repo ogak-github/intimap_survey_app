@@ -1,15 +1,19 @@
 import 'dart:async';
 import 'dart:collection';
+import 'dart:convert';
+import 'dart:developer';
 import 'dart:io';
 import 'dart:isolate';
 
 import 'package:flutter/services.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:survey_app/data/spatialite.dart';
 import 'package:survey_app/model/street.dart';
 import 'package:survey_app/model/update_data.dart';
 
+import '../model/route_issue.dart';
 import '../utils/app_logger.dart';
 import '../utils/device_info.dart';
 
@@ -206,6 +210,13 @@ class StreetSpatialite {
         "SELECT AddGeometryColumn('street', 'geom',  4326, 'GEOMETRY', 'XY');");
     queries.add("SELECT CreateSpatialIndex('street','geom');");
 
+    queries.add("CREATE TABLE $ifNotExists route_issue "
+        "( id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, street_id INTEGER, blocked BOOLEAN,  notes TEXT, FOREIGN KEY (street_id) REFERENCES street(id));");
+    queries
+        .add("CREATE INDEX $ifNotExists rStreet ON route_issue(street_id) ;");
+    queries.add(
+        "SELECT AddGeometryColumn('route_issue', 'geom', 4326, 'POINT', 'XY');");
+
     /*    queries.add("CREATE INDEX $ifNotExists rType ON routing(type) ;");
     queries.add("CREATE INDEX $ifNotExists rName ON routing(name) ;");
     queries.add("CREATE INDEX $ifNotExists rMeta ON routing(meta) ;");
@@ -290,10 +301,56 @@ class StreetData {
     }
   }
 
-  Future<bool> updateStreet(UpdateData street, int id) async {
+  Future<bool> addRouteIssue(RouteIssueData routeIssue) async {
+    MyLogger("Fill data into DB").i(routeIssue.streetId.toString());
+    List<String> queries = [];
+    queries.add(routeIssue.insertReplaceQuery);
+    try {
+      //MyLogger("Query Length").i(queries.toString());
+      return (await spatialite).executeQueriesWithTransaction(queries);
+    } on PlatformException catch (e) {
+      MyLogger("DB Platform Exception").e(e.toString());
+      return false;
+    } catch (e) {
+      MyLogger("DB").e(e.toString());
+      return false;
+    }
+  }
+
+  Future<List<RouteIssue>> getRouteIssue(List<int> streetIds) async {
+    List<RouteIssue> routeIssue = [];
     List<String> queries = [];
     var query =
-        "UPDATE street SET truk = ${street.truk}, pickup = ${street.pickup}, roda3 = ${street.roda3}, last_modified_time = datetime('now', 'localtime') WHERE id = $id;";
+        "SELECT id, street_id, blocked, notes, st_astext(geom) as geom FROM route_issue WHERE street_id IN (${streetIds.join(",")})";
+    queries.add(query);
+    try {
+      var data = await (sqliteQueue).then((val) {
+        return val.runQuery(query);
+      });
+      if (data == null) return [];
+      var isolatedRouteParsing = await Isolate.run<List<RouteIssue>>(() async {
+        for (var item in data) {
+          Map<String, dynamic> map = item;
+          RouteIssue s = RouteIssue.fromJson(map);
+          if (s.geom.contains("POINT")) {
+            routeIssue.add(s);
+          }
+        }
+
+        return routeIssue;
+      });
+      return isolatedRouteParsing;
+    } catch (e) {
+      MyLogger("DB").e(e.toString());
+      return routeIssue;
+    }
+  }
+
+  Future<bool> updateStreet(UpdateData street, int id) async {
+    List<String> queries = [];
+    var encodedMetadata = jsonEncode(street.metadata);
+    var query =
+        "UPDATE street SET truk = ${street.truk}, pickup = ${street.pickup}, roda3 = ${street.roda3}, meta = $encodedMetadata, last_modified_time = datetime('now', 'localtime') WHERE id = $id;";
     queries.add(query);
     try {
       return (await spatialite).executeQueriesWithTransaction(queries);
@@ -322,7 +379,8 @@ class StreetData {
         for (var item in data) {
           Map<String, dynamic> map = item;
           Street s = Street.fromJson(map);
-          if (s.geom.contains("LINESTRING")) {
+          if (s.geom.contains("LINESTRING") &&
+              s.geom.contains("GEOMETRYCOLLECTION")) {
             streets.add(s);
           }
         }
@@ -336,6 +394,49 @@ class StreetData {
     } catch (e) {
       MyLogger("DB").e(e.toString());
       return [];
+    }
+  }
+
+  Future<List<RouteIssue>> getSingleRouteIssue(int streetId) async {
+    List<String> queries = [];
+    var query = "SELECT * FROM route_issue WHERE street_id = $streetId";
+    queries.add(query);
+    try {
+      var data = await (sqliteQueue).then((val) {
+        return val.runQuery(query);
+      });
+      if (data == null) return [];
+      List<RouteIssue> routeIssues = [];
+      var isolatedRouteIssues = await Isolate.run<List<RouteIssue>>(() async {
+        for (var item in data) {
+          Map<String, dynamic> map = item;
+          Street s = Street.fromJson(map);
+          if (s.geom.contains("POINT")) {
+            routeIssues.add(RouteIssue.fromJson(map));
+          }
+        }
+
+        return routeIssues;
+      });
+      return isolatedRouteIssues;
+    } catch (e) {
+      MyLogger("DB").e(e.toString());
+      return [];
+    }
+  }
+
+  Future<bool> deleteRouteIssue(int id) async {
+    List<String> queries = [];
+    var query = "DELETE FROM route_issue WHERE id = $id";
+    queries.add(query);
+    try {
+      return (await spatialite).executeQueriesWithTransaction(queries);
+    } on PlatformException catch (e) {
+      MyLogger("DB Platform Exception").e(e.toString());
+      return false;
+    } catch (e) {
+      MyLogger("DB").e(e.toString());
+      return false;
     }
   }
 
@@ -366,3 +467,11 @@ class StreetData {
     }
   }
 }
+
+final spatialiteProvider = Provider<StreetSpatialite>((ref) {
+  return StreetSpatialite();
+});
+
+final streetDataProvider = Provider<StreetData>((ref) {
+  return StreetData(ref.watch(spatialiteProvider));
+});

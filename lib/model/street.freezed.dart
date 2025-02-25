@@ -392,7 +392,7 @@ Metadata _$MetadataFromJson(Map<String, dynamic> json) {
 /// @nodoc
 mixin _$Metadata {
   String? get notes => throw _privateConstructorUsedError;
-  bool? get updated => throw _privateConstructorUsedError;
+  bool? get blocked => throw _privateConstructorUsedError;
 
   /// Serializes this Metadata to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -409,7 +409,7 @@ abstract class $MetadataCopyWith<$Res> {
   factory $MetadataCopyWith(Metadata value, $Res Function(Metadata) then) =
       _$MetadataCopyWithImpl<$Res, Metadata>;
   @useResult
-  $Res call({String? notes, bool? updated});
+  $Res call({String? notes, bool? blocked});
 }
 
 /// @nodoc
@@ -428,16 +428,16 @@ class _$MetadataCopyWithImpl<$Res, $Val extends Metadata>
   @override
   $Res call({
     Object? notes = freezed,
-    Object? updated = freezed,
+    Object? blocked = freezed,
   }) {
     return _then(_value.copyWith(
       notes: freezed == notes
           ? _value.notes
           : notes // ignore: cast_nullable_to_non_nullable
               as String?,
-      updated: freezed == updated
-          ? _value.updated
-          : updated // ignore: cast_nullable_to_non_nullable
+      blocked: freezed == blocked
+          ? _value.blocked
+          : blocked // ignore: cast_nullable_to_non_nullable
               as bool?,
     ) as $Val);
   }
@@ -451,7 +451,7 @@ abstract class _$$MetadataImplCopyWith<$Res>
       __$$MetadataImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({String? notes, bool? updated});
+  $Res call({String? notes, bool? blocked});
 }
 
 /// @nodoc
@@ -468,16 +468,16 @@ class __$$MetadataImplCopyWithImpl<$Res>
   @override
   $Res call({
     Object? notes = freezed,
-    Object? updated = freezed,
+    Object? blocked = freezed,
   }) {
     return _then(_$MetadataImpl(
       notes: freezed == notes
           ? _value.notes
           : notes // ignore: cast_nullable_to_non_nullable
               as String?,
-      updated: freezed == updated
-          ? _value.updated
-          : updated // ignore: cast_nullable_to_non_nullable
+      blocked: freezed == blocked
+          ? _value.blocked
+          : blocked // ignore: cast_nullable_to_non_nullable
               as bool?,
     ));
   }
@@ -486,7 +486,7 @@ class __$$MetadataImplCopyWithImpl<$Res>
 /// @nodoc
 @JsonSerializable()
 class _$MetadataImpl with DiagnosticableTreeMixin implements _Metadata {
-  const _$MetadataImpl({this.notes, this.updated});
+  const _$MetadataImpl({this.notes, this.blocked});
 
   factory _$MetadataImpl.fromJson(Map<String, dynamic> json) =>
       _$$MetadataImplFromJson(json);
@@ -494,11 +494,11 @@ class _$MetadataImpl with DiagnosticableTreeMixin implements _Metadata {
   @override
   final String? notes;
   @override
-  final bool? updated;
+  final bool? blocked;
 
   @override
   String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
-    return 'Metadata(notes: $notes, updated: $updated)';
+    return 'Metadata(notes: $notes, blocked: $blocked)';
   }
 
   @override
@@ -507,7 +507,7 @@ class _$MetadataImpl with DiagnosticableTreeMixin implements _Metadata {
     properties
       ..add(DiagnosticsProperty('type', 'Metadata'))
       ..add(DiagnosticsProperty('notes', notes))
-      ..add(DiagnosticsProperty('updated', updated));
+      ..add(DiagnosticsProperty('blocked', blocked));
   }
 
   @override
@@ -516,12 +516,12 @@ class _$MetadataImpl with DiagnosticableTreeMixin implements _Metadata {
         (other.runtimeType == runtimeType &&
             other is _$MetadataImpl &&
             (identical(other.notes, notes) || other.notes == notes) &&
-            (identical(other.updated, updated) || other.updated == updated));
+            (identical(other.blocked, blocked) || other.blocked == blocked));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, notes, updated);
+  int get hashCode => Object.hash(runtimeType, notes, blocked);
 
   /// Create a copy of Metadata
   /// with the given fields replaced by the non-null parameter values.
@@ -540,7 +540,7 @@ class _$MetadataImpl with DiagnosticableTreeMixin implements _Metadata {
 }
 
 abstract class _Metadata implements Metadata {
-  const factory _Metadata({final String? notes, final bool? updated}) =
+  const factory _Metadata({final String? notes, final bool? blocked}) =
       _$MetadataImpl;
 
   factory _Metadata.fromJson(Map<String, dynamic> json) =
@@ -549,7 +549,7 @@ abstract class _Metadata implements Metadata {
   @override
   String? get notes;
   @override
-  bool? get updated;
+  bool? get blocked;
 
   /// Create a copy of Metadata
   /// with the given fields replaced by the non-null parameter values.

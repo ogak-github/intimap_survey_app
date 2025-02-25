@@ -3,7 +3,6 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:survey_app/api/street_api.dart';
-import 'package:survey_app/provider/street_provider.dart';
 
 import '../provider/server_state.dart';
 import 'map_widget.dart';

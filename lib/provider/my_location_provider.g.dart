@@ -22,23 +22,6 @@ final hasLocationProvider = Provider<bool>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef HasLocationRef = ProviderRef<bool>;
-String _$locationUpdateHash() => r'27d98edae699a8657461f6cc7421e51f5cce700d';
-
-/// See also [locationUpdate].
-@ProviderFor(locationUpdate)
-final locationUpdateProvider = StreamProvider<LocationData?>.internal(
-  locationUpdate,
-  name: r'locationUpdateProvider',
-  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-      ? null
-      : _$locationUpdateHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
-
-@Deprecated('Will be removed in 3.0. Use Ref instead')
-// ignore: unused_element
-typedef LocationUpdateRef = StreamProviderRef<LocationData?>;
 String _$myLocationHash() => r'aa0d104d2c1f261e9a98acf4055705c16bf30800';
 
 /// See also [MyLocation].
@@ -101,7 +84,7 @@ final requestPermissionProvider =
 );
 
 typedef _$RequestPermission = AutoDisposeNotifier<void>;
-String _$myCurrentLocationHash() => r'4a7a65d707ca77224472da30794ce189ec0bbe5e';
+String _$myCurrentLocationHash() => r'0c446b342b4c850543fb6764f50b950371624f2b';
 
 /// See also [MyCurrentLocation].
 @ProviderFor(MyCurrentLocation)
@@ -117,5 +100,21 @@ final myCurrentLocationProvider =
 );
 
 typedef _$MyCurrentLocation = Notifier<LocationData?>;
+String _$locationUpdateHash() => r'54431b5ad4102e5b6b0d0cb172854d3cc9c0e15b';
+
+/// See also [LocationUpdate].
+@ProviderFor(LocationUpdate)
+final locationUpdateProvider =
+    StreamNotifierProvider<LocationUpdate, LocationData?>.internal(
+  LocationUpdate.new,
+  name: r'locationUpdateProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$locationUpdateHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef _$LocationUpdate = StreamNotifier<LocationData?>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package

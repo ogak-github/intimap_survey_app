@@ -15,26 +15,17 @@ class Street with _$Street {
 
   @HiveType(typeId: 1, adapterName: "StreetAdapter")
   const factory Street({
-    @HiveField(0)
-    required int id,
-    @JsonKey(name: 'osm_id') 
-    @HiveField(1)
-    required String osmId,
-    @HiveField(2)
-    String? name,
-    @HiveField(3)
-    int? truk,
-    @HiveField(4)
-    int? pickup,
-    @HiveField(5)
-    int? roda3,
-    @HiveField(6)
-    String? meta,
-    @JsonKey(name: 'last_modified_time') 
+    @HiveField(0) required int id,
+    @JsonKey(name: 'osm_id') @HiveField(1) required String osmId,
+    @HiveField(2) String? name,
+    @HiveField(3) int? truk,
+    @HiveField(4) int? pickup,
+    @HiveField(5) int? roda3,
+    @HiveField(6) String? meta,
+    @JsonKey(name: 'last_modified_time')
     @HiveField(7)
     required DateTime lastModifiedTime,
-    @HiveField(8)
-    required String geom,
+    @HiveField(8) required String geom,
   }) = _Street;
 
   factory Street.fromJson(Map<String, Object?> json) => _$StreetFromJson(json);
@@ -49,7 +40,7 @@ class Street with _$Street {
         }
       }
 
-      /*   if (geom.contains("GEOMETRYCOLLECTION")) {
+      if (geom.contains("GEOMETRYCOLLECTION")) {
         var geometryColl = GeometryCollection.parse(geom, format: WKT.geometry);
         for (var element in geometryColl.geometries) {
           if (element.geomType == Geom.lineString) {
@@ -60,7 +51,7 @@ class Street with _$Street {
             }
           }
         }
-      } */
+      }
       return list;
     } catch (e) {
       log(e.toString(), name: "Convert to latlng error");
@@ -76,13 +67,15 @@ class Street with _$Street {
   }
 }
 
-
 @freezed
 class Metadata with _$Metadata {
   const factory Metadata({
     String? notes,
-    bool? updated,
+    bool? blocked,
   }) = _Metadata;
 
-  factory Metadata.fromJson(Map<String, Object?> json) => _$MetadataFromJson(json);
+  factory Metadata.fromJson(Map<String, Object?> json) =>
+      _$MetadataFromJson(json);
 }
+
+

@@ -33,7 +33,7 @@ class PanelBuilderWidget extends HookConsumerWidget {
 
     void updateprocess(Street street) async {
       isLoading.value = true;
-      const metadata = Metadata(notes: "", updated: true);
+      const metadata = Metadata(notes: "", blocked: true);
       final data = UpdateData(
           truk: truk.value,
           pickup: pickup.value,

@@ -45,7 +45,7 @@ class DioClient {
       );
       return response;
     } catch (e) {
-      rethrow;
+        rethrow;
     }
   }
 

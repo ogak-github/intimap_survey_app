@@ -96,11 +96,11 @@ Map<String, dynamic> _$$StreetImplToJson(_$StreetImpl instance) =>
 _$MetadataImpl _$$MetadataImplFromJson(Map<String, dynamic> json) =>
     _$MetadataImpl(
       notes: json['notes'] as String?,
-      updated: json['updated'] as bool?,
+      blocked: json['blocked'] as bool?,
     );
 
 Map<String, dynamic> _$$MetadataImplToJson(_$MetadataImpl instance) =>
     <String, dynamic>{
       'notes': instance.notes,
-      'updated': instance.updated,
+      'blocked': instance.blocked,
     };

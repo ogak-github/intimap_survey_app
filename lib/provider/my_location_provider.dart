@@ -86,9 +86,16 @@ class RequestPermission extends _$RequestPermission {
 class MyCurrentLocation extends _$MyCurrentLocation {
   @override
   LocationData? build() {
-    Future.microtask(() {
+    Timer? timer;
+
+    timer = Timer.periodic(const Duration(seconds: 25), (_) {
       _watchLocation();
     });
+
+    ref.onDispose(() {
+      timer?.cancel();
+    });
+
     return null;
   }
 
@@ -132,16 +139,19 @@ bool hasLocation(Ref ref) {
 }
 
 @Riverpod(keepAlive: true)
-Stream<LocationData?> locationUpdate(Ref ref) async* {
-  AppLogger().logger.d("locationUpdateProvider rebuild");
-  final requestStatus = await ref.watch(checkPermissionProvider.future);
+class LocationUpdate extends _$LocationUpdate {
+  @override
+  Stream<LocationData?> build() async* {
+    AppLogger().logger.d("locationUpdateProvider rebuild");
+    final requestStatus = await ref.watch(checkPermissionProvider.future);
 
-  if (requestStatus != true) {
-    yield null;
-    return;
+    if (requestStatus != true) {
+      yield null;
+      return;
+    }
+
+    await Location()
+        .changeSettings(accuracy: LocationAccuracy.navigation, interval: 1000);
+    yield* Location().onLocationChanged;
   }
-
-  await Location()
-      .changeSettings(accuracy: LocationAccuracy.navigation, interval: 1000);
-  yield* Location().onLocationChanged;
 }

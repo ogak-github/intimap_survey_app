@@ -25,6 +25,5 @@ void app() async {
 }
 
 void _runThisApp() async {
-  
   return runApp(const ProviderScope(child: MyApp()));
 }

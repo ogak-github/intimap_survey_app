@@ -3,6 +3,7 @@ import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:geobase/geobase.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:sliding_up_panel2/sliding_up_panel2.dart';
@@ -11,7 +12,7 @@ import 'package:survey_app/provider/hive_street_provider.dart';
 import 'package:survey_app/provider/loading_state.dart';
 import 'package:survey_app/provider/my_location_provider.dart';
 import 'package:survey_app/provider/street_provider.dart';
-import 'package:survey_app/ui/components/custom_box.dart';
+import 'package:survey_app/ui/components/street_info.dart';
 import 'package:survey_app/utils/app_logger.dart';
 import 'components/custom_text_box.dart';
 import 'panel_builder_widget.dart';
@@ -27,11 +28,13 @@ class MapView extends StatefulHookConsumerWidget {
 }
 
 class _MapViewState extends ConsumerState<MapView> with WidgetsBindingObserver {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   GoogleMapController? _mapController;
   bool _mapCreated = false;
   double latitude = -0.7893;
   double longitude = 113.9213;
   Set<Polyline> _polylines = {};
+  Set<Marker> _markers = {};
   final Set<Polyline> _selectedPolyline = {};
   bool _myLocationEnabled = false;
   Timer? timer;
@@ -91,11 +94,10 @@ class _MapViewState extends ConsumerState<MapView> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(loadingStateProvider);
-    final panelCtrl = ref.watch(panelController);
     final selectedStreet = ref.watch(focusedStreetProvider);
-    final loadDataNotifier = ref.watch(loadedStreetDataProvider);
     var permission = ref.watch(checkPermissionProvider);
-    final inMemoryStreet = ref.watch(inMemoryStreetProvider);
+    // final inMemoryStreet = ref.watch(inMemoryStreetProvider);
+    final markerData = ref.watch(markerDataProvider);
 
     // final loadPolyline = ref.watch(drawStreetProvider);
 /*     useEffect(() {
@@ -126,36 +128,15 @@ class _MapViewState extends ConsumerState<MapView> with WidgetsBindingObserver {
       return null;
     }, [permission]);
 
-    if (inMemoryStreet.isNotEmpty) {
-      ref.listen(drawStreetProvider.future, (previous, next) async {
-        var street = await next;
-        setState(() {
-          _polylines = street;
-        });
+    ref.listen(drawStreetProvider.future, (previous, next) async {
+      var street = await next;
+      setState(() {
+        _polylines = street.polylines;
+        _markers = street.markers;
       });
-    }
+    });
 
     useEffect(() {
-      if (selectedStreet != null) {
-        setState(() {
-          _selectedPolyline.add(Polyline(
-            consumeTapEvents: true,
-            polylineId: PolylineId("Focused: ${selectedStreet.id}"),
-            points: selectedStreet.poly,
-            color: Colors.yellow,
-            width: 5,
-            onTap: () {
-              MyLogger("Tapped").i(selectedStreet.osmId.toString());
-              ref.read(focusedStreetProvider.notifier).clear();
-            },
-          ));
-        });
-      } else {
-        setState(() {
-          _selectedPolyline.removeWhere(
-              (element) => element.polylineId.value.contains("Focused"));
-        });
-      }
       return null;
     }, [selectedStreet]);
 
@@ -183,98 +164,152 @@ class _MapViewState extends ConsumerState<MapView> with WidgetsBindingObserver {
           });
     }
 
+    void Function(LatLng)? onLongPress(LatLng arg) {
+      MyLogger("Map long press").d(arg.toString());
+      ref.read(drawStreetProvider.notifier).getBlockPoint(arg);
+
+      return null;
+    }
+
     return Scaffold(
+      key: _scaffoldKey,
       extendBodyBehindAppBar: true,
-      body: SlidingUpPanel(
-        controller: panelCtrl,
-        minHeight: 0,
-        maxHeight: 220,
-        snapPoint: 0.5,
-        parallaxEnabled: true,
-        panelBuilder: () => const PanelBuilderWidget(),
-        body: Stack(
-          children: [
-            GoogleMap(
-              mapType: MapType.normal,
-              polylines: _getCombinedPolylines(),
-              onMapCreated: _onMapCreated,
-              zoomControlsEnabled: false,
-              initialCameraPosition:
-                  CameraPosition(target: LatLng(latitude, longitude), zoom: 2),
-              myLocationEnabled: _myLocationEnabled,
-              myLocationButtonEnabled: false,
-              onTap: (arg) async {
-                ref.read(focusedStreetProvider.notifier).clear();
-                await panelCtrl.close();
-              },
+      drawer: Drawer(
+          child: ListView(
+        children: [
+          const DrawerHeader(
+            decoration: BoxDecoration(
+              color: Colors.blue,
             ),
-            if (_mapCreated) ...[
-              Positioned(
-                right: 15,
-                top: 0,
-                child: SafeArea(
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: 20),
-                    child: Row(
-                      children: [
-                        FloatingActionButton.small(
-                          child: const Icon(Icons.refresh),
-                          onPressed: () {
-                            ref.invalidate(inMemoryStreetProvider);
-                            ref
-                                .read(drawStreetProvider.notifier)
-                                .loadStreetData();
-                          },
-                        ),
-                        const SizedBox(width: 5),
-                        FloatingActionButton.small(
-                          child: const Icon(Icons.sync),
-                          onPressed: () {
-                            final hiveStreet = ref.read(hiveStreetProvider);
-                            if (hiveStreet.isNotEmpty) {
-                              showSyncDialog();
-                            } else {
-                              ref.read(loadAllStreetProvider);
-                            }
-                          },
-                        ),
-                      ],
-                    ),
+            child: Text('Drawer Header'),
+          ),
+          ListTile(
+            title: const Text('Sync Data'),
+            onTap: () {
+              showSyncDialog();
+            },
+          ),
+        ],
+      )),
+      body: Stack(
+        children: [
+          GoogleMap(
+            mapType: MapType.normal,
+            polylines: _getCombinedPolylines(),
+            markers: {
+              ..._markers,
+              ...markerData.map((e) => e.marker),
+              ...markerData.map((e) => e.txtMarker != null
+                  ? e.txtMarker!
+                  : const Marker(markerId: MarkerId("empty")))
+            },
+            onMapCreated: _onMapCreated,
+            zoomControlsEnabled: false,
+            initialCameraPosition:
+                CameraPosition(target: LatLng(latitude, longitude), zoom: 2),
+            myLocationEnabled: _myLocationEnabled,
+            myLocationButtonEnabled: false,
+            onTap: (arg) async {
+              /*  ref.read(focusedStreetProvider.notifier).clear();
+                await panelCtrl.close(); */
+              // ref.read(drawStreetProvider.notifier).tapPoint(arg);
+              //log(arg.toString(), name: "Tapped");
+              ref
+                  .read(tapPointProvider.notifier)
+                  .update((state) => state = null);
+            },
+            onLongPress: onLongPress,
+          ),
+          if (_mapCreated) ...[
+            Positioned(
+              top: 15,
+              left: 15,
+              child: SafeArea(
+                child: FloatingActionButton(
+                  onPressed: () {
+                    _scaffoldKey.currentState?.openDrawer();
+                  },
+                  child: const Icon(Icons.list),
+                ),
+              ),
+            ),
+            Positioned(
+              right: 15,
+              top: 0,
+              child: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 20),
+                  child: Row(
+                    children: [
+                      FloatingActionButton.small(
+                        child: const Icon(Icons.refresh),
+                        onPressed: () {
+                          ref.invalidate(inMemoryStreetProvider);
+                          ref
+                              .read(drawStreetProvider.notifier)
+                              .loadStreetData();
+                        },
+                      ),
+                      const SizedBox(width: 5),
+                      FloatingActionButton.small(
+                        child: const Icon(Icons.sync),
+                        onPressed: () {
+                          final hiveStreet = ref.read(hiveStreetProvider);
+                          if (hiveStreet.isNotEmpty) {
+                            showSyncDialog();
+                          } else {
+                            ref.read(loadAllStreetProvider);
+                          }
+                        },
+                      ),
+                    ],
                   ),
                 ),
               ),
-              Positioned(
-                right: 15,
-                bottom: 15,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    const SizedBox(height: 15),
-                    GpsFab(controller: _mapController!),
-                  ],
-                ),
+            ),
+            Positioned(
+              right: 15,
+              bottom: 15,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  const SizedBox(height: 15),
+                  GpsFab(controller: _mapController!),
+                ],
               ),
-              Positioned(
+            ),
+            Positioned(
+              left: 15,
+              bottom: 15,
+              child: ZoomControlFab(controller: _mapController!),
+            ),
+            Visibility(
+              visible: selectedStreet != null,
+              child: Positioned(
+                bottom: 125,
                 left: 15,
-                bottom: 15,
-                child: ZoomControlFab(controller: _mapController!),
+                right: 15,
+                child: Opacity(
+                    opacity: 0.8,
+                    child: StreetInfo(selectedStreet: selectedStreet)),
               ),
-            ],
-            state.isLoading
-                ? Positioned(
-                    left: 15,
-                    top: 0,
-                    child: SafeArea(
-                      child: Padding(
-                        padding: const EdgeInsets.only(top: 20),
-                        child: CustomTextBox(
-                          text: state.infoText,
-                        ),
+            ),
+          ],
+          state.isLoading
+              ? Positioned(
+                  left: 15,
+                  top: 0,
+                  child: SafeArea(
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 20),
+                      child: CustomTextBox(
+                        text: state.infoText,
                       ),
                     ),
-                  )
-                : const SizedBox.shrink(),
-            loadDataNotifier.isLoading
+                  ),
+                )
+              : const SizedBox.shrink(),
+          /*  loadDataNotifier.isLoading
                 ? Positioned(
                     left: 15,
                     top: 0,
@@ -295,9 +330,8 @@ class _MapViewState extends ConsumerState<MapView> with WidgetsBindingObserver {
                       ),
                     ),
                   )
-                : const SizedBox.shrink(),
-          ],
-        ),
+                : const SizedBox.shrink(), */
+        ],
       ),
     );
   }
@@ -345,7 +379,7 @@ class GpsFab extends HookConsumerWidget {
           .read(loadingStateProvider.notifier)
           .setLoading(isLoading: true, infoText: "Finding your location...");
 
-     // double zoom = await controller.getZoomLevel();
+      // double zoom = await controller.getZoomLevel();
       final location = await ref.read(myLocationProvider.future);
 
       if (location != null) {
