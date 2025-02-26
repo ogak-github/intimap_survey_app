@@ -290,7 +290,28 @@ class StreetData {
     }
 
     try {
-      //MyLogger("Query Length").i(queries.toString());
+      return (await spatialite).executeQueriesWithTransaction(queries);
+    } on PlatformException catch (e) {
+      MyLogger("DB Platform Exception").e(e.toString());
+      return false;
+    } catch (e) {
+      MyLogger("DB").e(e.toString());
+      return false;
+    }
+  }
+
+  Future<bool> fillBatchRouteIssueIntoDB(List<RouteIssue> routeIssues) async {
+    MyLogger("Fill data into DB (Route issues)")
+        .i(routeIssues.length.toString());
+    List<String> queries = [];
+
+    for (var routeIssue in routeIssues) {
+      var query = "REPLACE INTO route_issue (street_id, blocked, notes, geom) "
+          "VALUES(${routeIssue.streetId}, ${routeIssue.blocked}, '${routeIssue.notes}', GeomFromText('${routeIssue.geom}', 4326));";
+      queries.add(query);
+    }
+
+    try {
       return (await spatialite).executeQueriesWithTransaction(queries);
     } on PlatformException catch (e) {
       MyLogger("DB Platform Exception").e(e.toString());
@@ -363,6 +384,56 @@ class StreetData {
     }
   }
 
+  Future<bool> updateStreetPerColumn(
+      UpdateStreetPerColumn street, int id) async {
+    List<String> queries = [];
+    var query =
+        "UPDATE street SET ${street.columnName} = ${street.value}, last_modified_time = datetime('now', 'localtime') WHERE id = $id;";
+    queries.add(query);
+    try {
+      return (await spatialite).executeQueriesWithTransaction(queries);
+    } on PlatformException catch (e) {
+      MyLogger("DB Platform Exception").e(e.toString());
+      return false;
+    } catch (e) {
+      MyLogger("DB").e(e.toString());
+      return false;
+    }
+  }
+
+  Future<List<Street>> getUpdatedStreet(List<int> ids) async {
+    List<String> queries = [];
+    var query =
+        "SELECT  id, osm_id, nama, truk, pickup, roda3, last_modified_time, meta, st_astext(geom) as geom FROM street WHERE id IN (${ids.join(",")})";
+    queries.add(query);
+    try {
+      var data = await (sqliteQueue).then((val) {
+        return val.runQuery(query);
+      });
+      if (data == null) return [];
+      List<Street> streets = [];
+      var isolatedStreets = await Isolate.run<List<Street>>(() async {
+        for (var item in data) {
+          Map<String, dynamic> map = item;
+          Street s = Street.fromJson(map);
+          if (s.geom.contains("LINESTRING") &&
+              s.geom.contains("GEOMETRYCOLLECTION")) {
+            streets.add(s);
+          }
+        }
+
+        return streets;
+      });
+      return isolatedStreets;
+    } on PlatformException catch (e) {
+      MyLogger("DB Platform Exception").e(e.toString());
+      return [];
+    } catch (e) {
+      MyLogger("DB").e(e.toString());
+      return [];
+    }
+  }
+
   Future<List<Street>> getStreet() async {
     List<String> queries = [];
     var query =
@@ -425,12 +496,45 @@ class StreetData {
     }
   }
 
+  Future<List<RouteIssue>> getRouteIssues() async {
+    List<String> queries = [];
+    var query =
+        "SELECT id, street_id, blocked, notes, st_astext(geom) as geom FROM route_issue";
+    queries.add(query);
+    try {
+      var data = await (sqliteQueue).then((val) {
+        return val.runQuery(query);
+      });
+      if (data == null) return [];
+      List<RouteIssue> routeIssues = [];
+      var isolatedRouteIssues = await Isolate.run<List<RouteIssue>>(() async {
+        for (var item in data) {
+          Map<String, dynamic> map = item;
+          RouteIssue s = RouteIssue.fromJson(map);
+          if (s.geom.contains("POINT")) {
+            routeIssues.add(RouteIssue.fromJson(map));
+          }
+        }
+
+        return routeIssues;
+      });
+      return isolatedRouteIssues;
+    } catch (e) {
+      MyLogger("DB").e(e.toString());
+      return [];
+    }
+  }
+
   Future<bool> deleteRouteIssue(int id) async {
+    MyLogger("Delete Route Issue").i(id.toString());
     List<String> queries = [];
     var query = "DELETE FROM route_issue WHERE id = $id";
     queries.add(query);
     try {
-      return (await spatialite).executeQueriesWithTransaction(queries);
+      var data = await (sqliteQueue).then((val) {
+        return val.runQuery(query);
+      });
+      return data != null;
     } on PlatformException catch (e) {
       MyLogger("DB Platform Exception").e(e.toString());
       return false;

@@ -157,6 +157,136 @@ class _UpdateDataProviderElement extends AutoDisposeFutureProviderElement<bool>
   List<Street> get newStreets => (origin as UpdateDataProvider).newStreets;
 }
 
+String _$updateIssueHash() => r'01cc213f22f0a95ad3aaef3a70440c20330a6f70';
+
+/// See also [updateIssue].
+@ProviderFor(updateIssue)
+const updateIssueProvider = UpdateIssueFamily();
+
+/// See also [updateIssue].
+class UpdateIssueFamily extends Family<AsyncValue<bool>> {
+  /// See also [updateIssue].
+  const UpdateIssueFamily();
+
+  /// See also [updateIssue].
+  UpdateIssueProvider call(
+    List<RouteIssue> newIssue,
+  ) {
+    return UpdateIssueProvider(
+      newIssue,
+    );
+  }
+
+  @override
+  UpdateIssueProvider getProviderOverride(
+    covariant UpdateIssueProvider provider,
+  ) {
+    return call(
+      provider.newIssue,
+    );
+  }
+
+  static const Iterable<ProviderOrFamily>? _dependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get dependencies => _dependencies;
+
+  static const Iterable<ProviderOrFamily>? _allTransitiveDependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get allTransitiveDependencies =>
+      _allTransitiveDependencies;
+
+  @override
+  String? get name => r'updateIssueProvider';
+}
+
+/// See also [updateIssue].
+class UpdateIssueProvider extends AutoDisposeFutureProvider<bool> {
+  /// See also [updateIssue].
+  UpdateIssueProvider(
+    List<RouteIssue> newIssue,
+  ) : this._internal(
+          (ref) => updateIssue(
+            ref as UpdateIssueRef,
+            newIssue,
+          ),
+          from: updateIssueProvider,
+          name: r'updateIssueProvider',
+          debugGetCreateSourceHash:
+              const bool.fromEnvironment('dart.vm.product')
+                  ? null
+                  : _$updateIssueHash,
+          dependencies: UpdateIssueFamily._dependencies,
+          allTransitiveDependencies:
+              UpdateIssueFamily._allTransitiveDependencies,
+          newIssue: newIssue,
+        );
+
+  UpdateIssueProvider._internal(
+    super._createNotifier, {
+    required super.name,
+    required super.dependencies,
+    required super.allTransitiveDependencies,
+    required super.debugGetCreateSourceHash,
+    required super.from,
+    required this.newIssue,
+  }) : super.internal();
+
+  final List<RouteIssue> newIssue;
+
+  @override
+  Override overrideWith(
+    FutureOr<bool> Function(UpdateIssueRef provider) create,
+  ) {
+    return ProviderOverride(
+      origin: this,
+      override: UpdateIssueProvider._internal(
+        (ref) => create(ref as UpdateIssueRef),
+        from: from,
+        name: null,
+        dependencies: null,
+        allTransitiveDependencies: null,
+        debugGetCreateSourceHash: null,
+        newIssue: newIssue,
+      ),
+    );
+  }
+
+  @override
+  AutoDisposeFutureProviderElement<bool> createElement() {
+    return _UpdateIssueProviderElement(this);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is UpdateIssueProvider && other.newIssue == newIssue;
+  }
+
+  @override
+  int get hashCode {
+    var hash = _SystemHash.combine(0, runtimeType.hashCode);
+    hash = _SystemHash.combine(hash, newIssue.hashCode);
+
+    return _SystemHash.finish(hash);
+  }
+}
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+mixin UpdateIssueRef on AutoDisposeFutureProviderRef<bool> {
+  /// The parameter `newIssue` of this provider.
+  List<RouteIssue> get newIssue;
+}
+
+class _UpdateIssueProviderElement extends AutoDisposeFutureProviderElement<bool>
+    with UpdateIssueRef {
+  _UpdateIssueProviderElement(super.provider);
+
+  @override
+  List<RouteIssue> get newIssue => (origin as UpdateIssueProvider).newIssue;
+}
+
 String _$routingFnHash() => r'e20dedf644137840edea7e113e4b045c4b1392c2';
 
 /// See also [routingFn].
@@ -173,7 +303,23 @@ final routingFnProvider = AutoDisposeFutureProvider<RoutingFn?>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef RoutingFnRef = AutoDisposeFutureProviderRef<RoutingFn?>;
-String _$loadAllStreetHash() => r'0d4a43f3c10a35ad5c7e6a560d04ff7b07532e2c';
+String _$loadAllIssuesHash() => r'f7ecfd9240632da82843fb11aa48af86aa19a08f';
+
+/// See also [LoadAllIssues].
+@ProviderFor(LoadAllIssues)
+final loadAllIssuesProvider =
+    AutoDisposeAsyncNotifierProvider<LoadAllIssues, List<RouteIssue>>.internal(
+  LoadAllIssues.new,
+  name: r'loadAllIssuesProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$loadAllIssuesHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef _$LoadAllIssues = AutoDisposeAsyncNotifier<List<RouteIssue>>;
+String _$loadAllStreetHash() => r'f67b7fcf1b8688b3327804f513228f2f12c38156';
 
 /// See also [LoadAllStreet].
 @ProviderFor(LoadAllStreet)
@@ -189,7 +335,7 @@ final loadAllStreetProvider =
 );
 
 typedef _$LoadAllStreet = AutoDisposeAsyncNotifier<void>;
-String _$drawStreetHash() => r'7a9a0e5cd720d855e03b3579de7c8c250d74b2d9';
+String _$drawStreetHash() => r'b61bdb4df57cefdbd15f0e338d9848e808db9158';
 
 /// See also [DrawStreet].
 @ProviderFor(DrawStreet)
@@ -251,7 +397,7 @@ final focusedStreetProvider =
 );
 
 typedef _$FocusedStreet = AutoDisposeNotifier<Street?>;
-String _$markerDataHash() => r'c49ee2c09ed9604954b8e3a0cc9838b47bf54e6f';
+String _$markerDataHash() => r'e6cde74fab71e9590cce9ae45e25925421150965';
 
 /// See also [MarkerData].
 @ProviderFor(MarkerData)

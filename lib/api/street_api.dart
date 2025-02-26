@@ -5,6 +5,7 @@ import 'dart:isolate';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:survey_app/api/dio_client.dart';
+import 'package:survey_app/model/route_issue.dart';
 import 'package:survey_app/utils/app_logger.dart';
 
 import '../model/street.dart';
@@ -77,6 +78,49 @@ class StreetAPI {
     } catch (e) {
       MyLogger("API Error").e(e.toString());
       return false;
+    }
+  }
+
+  Future<bool> updateBulkRouteIssue(List<RouteIssue> routeIssues) async {
+    try {
+      final jsonData = routeIssues.map((e) => jsonEncode(e)).toList();
+      final response = await _dioClient.put(
+        '/update-route-issues',
+        data: jsonData.toString(),
+      );
+      MyLogger("Status code").i("${response.statusCode}");
+      if (response.statusCode != 200) {
+        return false;
+      }
+    } catch (e) {
+      MyLogger("API Error").e(e.toString());
+    }
+    return false;
+  }
+
+  Future<List<RouteIssue>> getRouteIssues() async {
+    List<RouteIssue> issues = [];
+    try {
+      final response = await _dioClient.get(
+        '/load-route-issues',
+      );
+      if (response.statusCode == 200) {
+        var isolated = await Isolate.run<List<RouteIssue>>(() async {
+          for (var item in response.data) {
+            Map<String, dynamic> map = item;
+            RouteIssue s = RouteIssue.fromJson(map);
+            issues.add(s);
+          }
+
+          return issues;
+        });
+
+        return isolated;
+      }
+      return issues;
+    } catch (e) {
+      MyLogger("API Error").e(e.toString());
+      return issues;
     }
   }
 }

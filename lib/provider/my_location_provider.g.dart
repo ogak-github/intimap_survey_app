@@ -22,7 +22,7 @@ final hasLocationProvider = Provider<bool>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef HasLocationRef = ProviderRef<bool>;
-String _$myLocationHash() => r'aa0d104d2c1f261e9a98acf4055705c16bf30800';
+String _$myLocationHash() => r'6b2299ebedc520b96c57496d157c1770f490bafa';
 
 /// See also [MyLocation].
 @ProviderFor(MyLocation)
@@ -52,7 +52,7 @@ final checkServiceProvider =
 );
 
 typedef _$CheckService = AutoDisposeAsyncNotifier<bool>;
-String _$checkPermissionHash() => r'4f332812e011ed2ae244c00c9ed48547e45cc0c1';
+String _$checkPermissionHash() => r'2f54fa6a603536764073423beab15f17e4053fb8';
 
 /// See also [CheckPermission].
 @ProviderFor(CheckPermission)
@@ -84,7 +84,7 @@ final requestPermissionProvider =
 );
 
 typedef _$RequestPermission = AutoDisposeNotifier<void>;
-String _$myCurrentLocationHash() => r'0c446b342b4c850543fb6764f50b950371624f2b';
+String _$myCurrentLocationHash() => r'91a4ac13eae961b7eae262f2318cfb99b7badcf8';
 
 /// See also [MyCurrentLocation].
 @ProviderFor(MyCurrentLocation)

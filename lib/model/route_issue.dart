@@ -3,7 +3,7 @@ import 'dart:developer';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:geobase/geobase.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:survey_app/utils/app_logger.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 part 'route_issue.freezed.dart';
 part 'route_issue.g.dart';
@@ -12,12 +12,13 @@ part 'route_issue.g.dart';
 class RouteIssue with _$RouteIssue {
   const RouteIssue._();
 
+  @HiveType(typeId: 2, adapterName: "RouteIssueAdapter")
   const factory RouteIssue({
-    required int id,
-    @JsonKey(name: "street_id") required int streetId,
-    required int blocked,
-    String? notes,
-    required String geom,
+    @HiveField(0) required int id,
+    @HiveField(1) @JsonKey(name: "street_id") required int streetId,
+    @HiveField(2) required int blocked,
+    @HiveField(3) String? notes,
+    @HiveField(4) required String geom,
   }) = _RouteIssue;
 
   factory RouteIssue.fromJson(Map<String, Object?> json) =>

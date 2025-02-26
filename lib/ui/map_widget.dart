@@ -14,11 +14,9 @@ import 'package:survey_app/provider/my_location_provider.dart';
 import 'package:survey_app/provider/street_provider.dart';
 import 'package:survey_app/ui/components/street_info.dart';
 import 'package:survey_app/utils/app_logger.dart';
+import '../provider/compute_data_provider.dart';
 import 'components/custom_text_box.dart';
-import 'panel_builder_widget.dart';
 
-final panelController =
-    StateProvider<PanelController>((ref) => PanelController());
 
 class MapView extends StatefulHookConsumerWidget {
   const MapView({super.key});
@@ -55,7 +53,7 @@ class _MapViewState extends ConsumerState<MapView> with WidgetsBindingObserver {
   }
 
   Future<void> _checkAndSyncDatabase() async {
-    final spatialiteDb = StreetData(StreetSpatialite());
+    final spatialiteDb = ref.read(streetDataProvider);
     var dataExist = await spatialiteDb.checkDataExist();
     if (!dataExist) {
       MyLogger("Table empty").i("Loading data from server...");
@@ -64,6 +62,14 @@ class _MapViewState extends ConsumerState<MapView> with WidgetsBindingObserver {
   }
 
   checkForChanges() async {
+    final streetData = ref.watch(streetDataProvider);
+    final listRouteIssue = await streetData.getRouteIssues();
+
+    if (listRouteIssue.isNotEmpty) {
+      log(listRouteIssue.map((e) => e.toJson()).toString(),
+          name: "route issue");
+    }
+
     final data = ref.read(hiveStreetProvider);
     MyLogger("Changes Recorded").i(data.length.toString());
 
@@ -98,6 +104,7 @@ class _MapViewState extends ConsumerState<MapView> with WidgetsBindingObserver {
     var permission = ref.watch(checkPermissionProvider);
     // final inMemoryStreet = ref.watch(inMemoryStreetProvider);
     final markerData = ref.watch(markerDataProvider);
+    bool dialogOpen = ref.watch(drawStreetProvider.notifier).isDialogOpen;
 
     // final loadPolyline = ref.watch(drawStreetProvider);
 /*     useEffect(() {
@@ -174,7 +181,7 @@ class _MapViewState extends ConsumerState<MapView> with WidgetsBindingObserver {
     return Scaffold(
       key: _scaffoldKey,
       extendBodyBehindAppBar: true,
-      drawer: Drawer(
+      /*   drawer: Drawer(
           child: ListView(
         children: [
           const DrawerHeader(
@@ -190,7 +197,7 @@ class _MapViewState extends ConsumerState<MapView> with WidgetsBindingObserver {
             },
           ),
         ],
-      )),
+      )), */
       body: Stack(
         children: [
           GoogleMap(
@@ -222,18 +229,6 @@ class _MapViewState extends ConsumerState<MapView> with WidgetsBindingObserver {
           ),
           if (_mapCreated) ...[
             Positioned(
-              top: 15,
-              left: 15,
-              child: SafeArea(
-                child: FloatingActionButton(
-                  onPressed: () {
-                    _scaffoldKey.currentState?.openDrawer();
-                  },
-                  child: const Icon(Icons.list),
-                ),
-              ),
-            ),
-            Positioned(
               right: 15,
               top: 0,
               child: SafeArea(
@@ -245,9 +240,9 @@ class _MapViewState extends ConsumerState<MapView> with WidgetsBindingObserver {
                         child: const Icon(Icons.refresh),
                         onPressed: () {
                           ref.invalidate(inMemoryStreetProvider);
-                          ref
+                          /* ref
                               .read(drawStreetProvider.notifier)
-                              .loadStreetData();
+                              .loadStreetData(); */
                         },
                       ),
                       const SizedBox(width: 5),
@@ -284,7 +279,7 @@ class _MapViewState extends ConsumerState<MapView> with WidgetsBindingObserver {
               child: ZoomControlFab(controller: _mapController!),
             ),
             Visibility(
-              visible: selectedStreet != null,
+              visible: selectedStreet != null && dialogOpen == false,
               child: Positioned(
                 bottom: 125,
                 left: 15,
@@ -383,13 +378,14 @@ class GpsFab extends HookConsumerWidget {
       final location = await ref.read(myLocationProvider.future);
 
       if (location != null) {
-        controller.animateCamera(
+        await controller.animateCamera(
           CameraUpdate.newCameraPosition(
             CameraPosition(
                 target: LatLng(location.latitude!, location.longitude!),
                 zoom: 16.0),
           ),
         );
+        ref.read(processedStreetDataProvider.notifier).reloadProcessLocation();
       }
 
       ref.read(loadingStateProvider.notifier).dismiss();
@@ -398,8 +394,7 @@ class GpsFab extends HookConsumerWidget {
 
     if (following.value) {
       ref.watch(myLocationProvider.notifier).watchLocation();
-      ref.listen(myLocationProvider, (previous, next) {
-        log(next.value!.heading.toString());
+      ref.listen(myLocationProvider, (_, next) {
         if (following.value) {
           next.whenData((location) async {
             if (location == null) return;

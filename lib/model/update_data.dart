@@ -12,3 +12,10 @@ class UpdateData {
       required this.roda3,
       this.metadata});
 }
+
+
+class UpdateStreetPerColumn {
+  String columnName;
+  int value;
+  UpdateStreetPerColumn({required this.columnName, required this.value});
+}

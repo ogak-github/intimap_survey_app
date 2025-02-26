@@ -43,6 +43,8 @@ class ProcessedStreetData extends _$ProcessedStreetData {
 
           _lastLocation = loc;
 
+          MyLogger("Location").i(loc.toString());
+
           _processLocation(loc);
           _canProcessLocation = false;
           _timer = Timer(const Duration(seconds: 20), () {
@@ -58,6 +60,14 @@ class ProcessedStreetData extends _$ProcessedStreetData {
       MyLogger("Error").e(e.toString());
     }
     return ResultSetData([], null);
+  }
+
+  void reloadProcessLocation() async {
+    final loc = Location();
+
+    final locData = await loc.getLocation();
+    _lastLocation = locData;
+    _processLocation(locData);
   }
 
   bool _isLocationChangeSignificant(
@@ -93,10 +103,12 @@ class ProcessedStreetData extends _$ProcessedStreetData {
 
   Future<List<RoutingPoint2>?> _computeSegment(LocationData loc) async {
     final routeFunction = await ref.read(routingFnProvider.future);
+
     try {
       final newUniqId = uniqIdMd5();
       var routePoints = await routeFunction?.computeSegmentAgaintsPoint(loc,
           queryId: newUniqId);
+
       return routePoints;
     } catch (e) {
       AppLogger().logger.e(e.toString());
@@ -118,9 +130,11 @@ class ProcessedStreetData extends _$ProcessedStreetData {
   Future<void> _processLocation(LocationData loc) async {
     var routePoints = await _computeSegment(loc);
     var selectedRoute = await _computeSegmentInfo(loc);
+    List<int> ids = [];
     if (routePoints == null) return;
-    d.log("${selectedRoute?.toJson()}", name: "Selected route points");
 
+    d.log("${selectedRoute?.toJson()}", name: "Selected route points");
+    MyLogger("User current location").i(loc.toString());
     List<Street> newFilteredStreets =
         routePoints.map((e) => e.street).whereType<Street>().toList();
 
@@ -135,6 +149,12 @@ class ProcessedStreetData extends _$ProcessedStreetData {
       filteredStreets = newFilteredStreets.toList();
       renderPolylines(filteredStreets, loc);
     } */
+
+    for (var street in newFilteredStreets) {
+      ids.add(street.id);
+    }
+
+    MyLogger("Filtered Streets ${ids.length}").i(ids.join(","));
   }
 }
 

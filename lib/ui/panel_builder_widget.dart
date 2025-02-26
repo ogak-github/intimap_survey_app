@@ -16,13 +16,11 @@ class PanelBuilderWidget extends HookConsumerWidget {
   const PanelBuilderWidget({super.key});
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final streetData = StreetData(StreetSpatialite());
+    final streetData = ref.watch(streetDataProvider);
     final selectedStreet = ref.watch(focusedStreetProvider);
     final truk = useState<int>(selectedStreet?.truk ?? 0);
     final pickup = useState<int>(selectedStreet?.pickup ?? 0);
     final roda3 = useState<int>(selectedStreet?.roda3 ?? 0);
-    final panelCtrl = ref.watch(panelController);
-    final isLoading = useState<bool>(false);
 
     useEffect(() {
       truk.value = selectedStreet?.truk ?? 0;
@@ -31,14 +29,8 @@ class PanelBuilderWidget extends HookConsumerWidget {
       return null;
     }, [selectedStreet]);
 
-    void updateprocess(Street street) async {
-      isLoading.value = true;
-      const metadata = Metadata(notes: "", blocked: true);
-      final data = UpdateData(
-          truk: truk.value,
-          pickup: pickup.value,
-          roda3: roda3.value,
-          metadata: metadata);
+    void updateprocess(UpdateStreetPerColumn update, Street street) async {
+      /// Save to hive
       Street newData = Street(
           id: street.id,
           osmId: street.osmId,
@@ -53,18 +45,16 @@ class PanelBuilderWidget extends HookConsumerWidget {
       EasyLoading.show(status: 'Updating data...');
 
       /// Directly update sqlite
-      await streetData.updateStreet(data, selectedStreet.id);
-      ref.read(drawStreetProvider.notifier).updateStreetData(newData);
+      await streetData.updateStreetPerColumn(update, street.id);
       ref.read(hiveStreetProvider.notifier).addStreet(newData);
 
-      isLoading.value = false;
-      panelCtrl.close();
       EasyLoading.dismiss();
       ref.invalidate(drawStreetProvider);
     }
 
     return selectedStreet != null
         ? Container(
+            padding: const EdgeInsets.all(1),
             child: Column(
               children: [
                 Center(
@@ -99,7 +89,9 @@ class PanelBuilderWidget extends HookConsumerWidget {
                           } else {
                             roda3.value = 1;
                           }
-                          MyLogger("Roda 3").i(roda3.value.toString());
+                          var data = UpdateStreetPerColumn(
+                              columnName: "roda3", value: roda3.value);
+                          updateprocess(data, selectedStreet);
                         },
                         selected: true),
                     ChoiceChip(
@@ -111,6 +103,9 @@ class PanelBuilderWidget extends HookConsumerWidget {
                           } else {
                             pickup.value = 1;
                           }
+                          var data = UpdateStreetPerColumn(
+                              columnName: "pickup", value: pickup.value);
+                          updateprocess(data, selectedStreet);
                         },
                         selected: true),
                     ChoiceChip(
@@ -122,44 +117,19 @@ class PanelBuilderWidget extends HookConsumerWidget {
                           } else {
                             truk.value = 1;
                           }
+
+                          var data = UpdateStreetPerColumn(
+                              columnName: "truk", value: truk.value);
+                          updateprocess(data, selectedStreet);
                         },
                         selected: true),
                   ],
                 ),
-                /*   const Divider(endIndent: 2, indent: 2),
-                Row(
-                  children: [
-                    const Padding(
-                      padding: EdgeInsets.all(8.0),
-                      child: Text("Notes:"),
-                    ),
-                    Text("${selectedStreet.meta}")
-                  ],
-                ), */
-
-                const Divider(endIndent: 2, indent: 2),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      updateprocess(selectedStreet);
-                    },
-                    child: isLoading.value
-                        ? const Center(
-                            child: Padding(
-                            padding: EdgeInsets.all(2),
-                            child: CircularProgressIndicator(),
-                          ))
-                        : const Text("Update"),
-                  ),
-                ),
               ],
             ),
           )
-        : Container(
-            child: const Center(
-              child: Text("No data!"),
-            ),
+        : const Center(
+            child: Text("No data!"),
           );
   }
 }

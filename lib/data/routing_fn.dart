@@ -20,7 +20,7 @@ class RoutingFn {
     final pointPos = "ST_line_locate_Point(geom, $point)";
 
     final query2 = """
-  SELECT
+  SELECT  
     id,
     "$queryId" as queryId,
     osm_id,
@@ -60,10 +60,11 @@ class RoutingFn {
         ST_Line_Interpolate_Point(geom, $pointPos) as fixedPoint,
         ST_Length(geom, 1) AS routeLength
       FROM street
-      WHERE ST_Distance($point, geom, 1) < 1000 AND ST_GeometryType(geom) <> 'ST_Point'
+      WHERE ST_Distance($point, geom, 1) < 1000 
   ) as sub
   ORDER BY distanceToRoute ASC;
 """;
+/* AND ST_GeometryType(geom) <> 'ST_Point' */
 
     final dataRaw =
         await (await _streetData.sqliteQueue).queueQuery(query2.trim());

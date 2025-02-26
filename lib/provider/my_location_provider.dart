@@ -5,6 +5,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:location/location.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:survey_app/provider/compute_data_provider.dart';
 
 import '../utils/app_logger.dart';
 
@@ -15,6 +16,7 @@ class MyLocation extends _$MyLocation {
   @override
   Future<LocationData?> build() async {
     final Location lc = Location();
+    ref.read(processedStreetDataProvider.notifier).reloadProcessLocation();
     return await lc.getLocation();
   }
 
@@ -50,7 +52,11 @@ class CheckPermission extends _$CheckPermission {
   Future<bool> build() async {
     final lc = Location();
     var permissionGranted = await lc.hasPermission();
-    return permissionGranted == PermissionStatus.granted;
+    bool granted = permissionGranted == PermissionStatus.granted;
+    if (granted) {
+      ref.read(processedStreetDataProvider.notifier).reloadProcessLocation();
+    }
+    return granted;
   }
 
   void listenPermissionChange() async {
@@ -86,14 +92,8 @@ class RequestPermission extends _$RequestPermission {
 class MyCurrentLocation extends _$MyCurrentLocation {
   @override
   LocationData? build() {
-    Timer? timer;
-
-    timer = Timer.periodic(const Duration(seconds: 25), (_) {
+    Future.microtask(() {
       _watchLocation();
-    });
-
-    ref.onDispose(() {
-      timer?.cancel();
     });
 
     return null;
@@ -128,6 +128,13 @@ class MyCurrentLocation extends _$MyCurrentLocation {
 
     ref.onDispose(() {
       AppLogger().logger.d("MyLocationProvider disposed");
+    });
+  }
+
+  void followLocation() {
+    final Location lc = Location();
+    lc.onLocationChanged.listen((event) {
+      state = event;
     });
   }
 }
