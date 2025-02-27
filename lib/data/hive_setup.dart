@@ -25,7 +25,8 @@ class HiveSetup {
     }
 
     await Hive.openBox<Street>('streets');
-    await Hive.openBox<RouteIssue>('route_issues'); 
+    await Hive.openBox<RouteIssue>('route_issues');
+    await Hive.openBox<String>('deleted_issue_id');
   }
 }
 

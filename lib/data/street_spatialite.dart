@@ -211,7 +211,7 @@ class StreetSpatialite {
     queries.add("SELECT CreateSpatialIndex('street','geom');");
 
     queries.add("CREATE TABLE $ifNotExists route_issue "
-        "( id TEXT NOT NULL PRIMARY KEY, street_id INTEGER, blocked BOOLEAN, notes TEXT, FOREIGN KEY (street_id) REFERENCES street(id));");
+        "( id TEXT NOT NULL PRIMARY KEY, street_id INTEGER, blocked INTEGER, notes TEXT, FOREIGN KEY (street_id) REFERENCES street(id));");
     queries.add("CREATE INDEX $ifNotExists rId ON route_issue (id);");
     queries
         .add("CREATE INDEX $ifNotExists rStreet ON route_issue(street_id) ;");
@@ -307,10 +307,10 @@ class StreetData {
     List<String> queries = [];
 
     for (var routeIssue in routeIssues) {
-      var query =
-          "REPLACE INTO route_issue (id, street_id, blocked, notes, geom) "
-          "VALUES(${routeIssue.id} ${routeIssue.streetId}, ${routeIssue.blocked}, '${routeIssue.notes}', GeomFromText('${routeIssue.geom}', 4326));";
-      queries.add(query);
+/*       var query =
+          "REPLACE INTO route_issue (id, street_id, blocked, notes, geom)"
+          "VALUES(${routeIssue.id} ${routeIssue.streetId}, ${routeIssue.blocked}, '${routeIssue.notes}', GeomFromText('${routeIssue.geom}', 4326));"; */
+      queries.add(routeIssue.insertReplaceQuery);
     }
 
     try {
@@ -359,9 +359,8 @@ class StreetData {
         for (var item in data) {
           Map<String, dynamic> map = item;
           RouteIssue s = RouteIssue.fromJson(map);
-          if (s.geom.contains("POINT")) {
-            routeIssue.add(s);
-          }
+          log(s.toJson().toString(), name: "Route Issue DB");
+          routeIssue.add(s);
         }
 
         return routeIssue;

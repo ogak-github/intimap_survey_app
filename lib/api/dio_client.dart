@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
+import 'package:survey_app/utils/app_logger.dart';
 
 class DioClient {
   final Dio _dio = Dio();
@@ -45,7 +46,7 @@ class DioClient {
       );
       return response;
     } catch (e) {
-        rethrow;
+      rethrow;
     }
   }
 
@@ -70,7 +71,11 @@ class DioClient {
       );
       return response;
     } catch (e) {
-      rethrow;
+      var result =
+          Response(requestOptions: RequestOptions(path: uri, data: data));
+      MyLogger("API_DIO_CLIENT").e(e.toString());
+      MyLogger("API_DIO_RESPONSE").e(data.toString());
+      return result;
     }
   }
 

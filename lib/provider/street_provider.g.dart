@@ -287,6 +287,136 @@ class _UpdateIssueProviderElement extends AutoDisposeFutureProviderElement<bool>
   List<RouteIssue> get newIssue => (origin as UpdateIssueProvider).newIssue;
 }
 
+String _$deleteIssueHash() => r'70f141daa14ebade4557f3ddffbbf299d3ddb640';
+
+/// See also [deleteIssue].
+@ProviderFor(deleteIssue)
+const deleteIssueProvider = DeleteIssueFamily();
+
+/// See also [deleteIssue].
+class DeleteIssueFamily extends Family<AsyncValue<bool>> {
+  /// See also [deleteIssue].
+  const DeleteIssueFamily();
+
+  /// See also [deleteIssue].
+  DeleteIssueProvider call(
+    String id,
+  ) {
+    return DeleteIssueProvider(
+      id,
+    );
+  }
+
+  @override
+  DeleteIssueProvider getProviderOverride(
+    covariant DeleteIssueProvider provider,
+  ) {
+    return call(
+      provider.id,
+    );
+  }
+
+  static const Iterable<ProviderOrFamily>? _dependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get dependencies => _dependencies;
+
+  static const Iterable<ProviderOrFamily>? _allTransitiveDependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get allTransitiveDependencies =>
+      _allTransitiveDependencies;
+
+  @override
+  String? get name => r'deleteIssueProvider';
+}
+
+/// See also [deleteIssue].
+class DeleteIssueProvider extends AutoDisposeFutureProvider<bool> {
+  /// See also [deleteIssue].
+  DeleteIssueProvider(
+    String id,
+  ) : this._internal(
+          (ref) => deleteIssue(
+            ref as DeleteIssueRef,
+            id,
+          ),
+          from: deleteIssueProvider,
+          name: r'deleteIssueProvider',
+          debugGetCreateSourceHash:
+              const bool.fromEnvironment('dart.vm.product')
+                  ? null
+                  : _$deleteIssueHash,
+          dependencies: DeleteIssueFamily._dependencies,
+          allTransitiveDependencies:
+              DeleteIssueFamily._allTransitiveDependencies,
+          id: id,
+        );
+
+  DeleteIssueProvider._internal(
+    super._createNotifier, {
+    required super.name,
+    required super.dependencies,
+    required super.allTransitiveDependencies,
+    required super.debugGetCreateSourceHash,
+    required super.from,
+    required this.id,
+  }) : super.internal();
+
+  final String id;
+
+  @override
+  Override overrideWith(
+    FutureOr<bool> Function(DeleteIssueRef provider) create,
+  ) {
+    return ProviderOverride(
+      origin: this,
+      override: DeleteIssueProvider._internal(
+        (ref) => create(ref as DeleteIssueRef),
+        from: from,
+        name: null,
+        dependencies: null,
+        allTransitiveDependencies: null,
+        debugGetCreateSourceHash: null,
+        id: id,
+      ),
+    );
+  }
+
+  @override
+  AutoDisposeFutureProviderElement<bool> createElement() {
+    return _DeleteIssueProviderElement(this);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is DeleteIssueProvider && other.id == id;
+  }
+
+  @override
+  int get hashCode {
+    var hash = _SystemHash.combine(0, runtimeType.hashCode);
+    hash = _SystemHash.combine(hash, id.hashCode);
+
+    return _SystemHash.finish(hash);
+  }
+}
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+mixin DeleteIssueRef on AutoDisposeFutureProviderRef<bool> {
+  /// The parameter `id` of this provider.
+  String get id;
+}
+
+class _DeleteIssueProviderElement extends AutoDisposeFutureProviderElement<bool>
+    with DeleteIssueRef {
+  _DeleteIssueProviderElement(super.provider);
+
+  @override
+  String get id => (origin as DeleteIssueProvider).id;
+}
+
 String _$routingFnHash() => r'e20dedf644137840edea7e113e4b045c4b1392c2';
 
 /// See also [routingFn].
@@ -335,7 +465,7 @@ final loadAllStreetProvider =
 );
 
 typedef _$LoadAllStreet = AutoDisposeAsyncNotifier<void>;
-String _$drawStreetHash() => r'15d8592255a9e6252600c43d08efef7cdaa2f9e1';
+String _$drawStreetHash() => r'6ab8f357c4240415e17997e79afb933105990eea';
 
 /// See also [DrawStreet].
 @ProviderFor(DrawStreet)

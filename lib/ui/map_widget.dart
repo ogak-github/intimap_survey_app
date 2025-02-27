@@ -3,7 +3,6 @@ import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:geobase/geobase.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:survey_app/data/street_spatialite.dart';
@@ -14,8 +13,12 @@ import 'package:survey_app/provider/my_location_provider.dart';
 import 'package:survey_app/provider/street_provider.dart';
 import 'package:survey_app/ui/components/street_info.dart';
 import 'package:survey_app/utils/app_logger.dart';
+import '../model/route_issue.dart';
 import '../provider/compute_data_provider.dart';
 import 'components/custom_text_box.dart';
+
+final mapControllerProvider =
+    StateProvider<GoogleMapController?>((ref) => null);
 
 class MapView extends StatefulHookConsumerWidget {
   const MapView({super.key});
@@ -31,7 +34,6 @@ class _MapViewState extends ConsumerState<MapView> with WidgetsBindingObserver {
   double latitude = -0.7893;
   double longitude = 113.9213;
   Set<Polyline> _polylines = {};
-  final Set<Marker> _markers = {};
 
   final Set<Polyline> _selectedPolyline = {};
   bool _myLocationEnabled = false;
@@ -44,7 +46,7 @@ class _MapViewState extends ConsumerState<MapView> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
 
     timer = Timer.periodic(
-        const Duration(seconds: 15), (Timer t) => checkForChanges());
+        const Duration(seconds: 60), (Timer t) => checkForChanges());
   }
 
   @override
@@ -63,16 +65,36 @@ class _MapViewState extends ConsumerState<MapView> with WidgetsBindingObserver {
   }
 
   checkForChanges() async {
-    final streetData = ref.watch(streetDataProvider);
-    final listRouteIssue = await streetData.getRouteIssues();
+    final deletedRouteIssueId = ref.read(deletedRouteIssueProvider);
+    MyLogger("Changes Recorded for undeleted Route Issue")
+        .i(deletedRouteIssueId.length.toString());
+    if (deletedRouteIssueId.isNotEmpty) {
+      for (var id in deletedRouteIssueId) {
+        final deleteProvider = await ref.read(deleteIssueProvider(id).future);
+        if (deleteProvider) {
+          ref.read(deletedRouteIssueProvider.notifier).removeDeletedId(id);
+        }
+      }
+    }
 
+    final listRouteIssue = ref.read(hiveRouteIssueProvider);
+    MyLogger("Changes Recorded for Route Issue")
+        .i(listRouteIssue.length.toString());
     if (listRouteIssue.isNotEmpty) {
-      log(listRouteIssue.map((e) => e.toJson()).toString(),
-          name: "route issue");
+      final provider =
+          await ref.read(updateIssueProvider(listRouteIssue).future);
+      if (provider) {
+        MyLogger("Update issue").i("Success");
+        for (var issue in listRouteIssue) {
+          ref.read(hiveRouteIssueProvider.notifier).removeRouteIssue(issue);
+        }
+      } else {
+        MyLogger("Upload route issue failed").e("data not uploaded");
+      }
     }
 
     final data = ref.read(hiveStreetProvider);
-    MyLogger("Changes Recorded").i(data.length.toString());
+    MyLogger("Changes Recorded for Street").i(data.length.toString());
 
     if (data.isNotEmpty) {
       final providerResult = await ref.read(updateDataProvider(data).future);
@@ -82,7 +104,7 @@ class _MapViewState extends ConsumerState<MapView> with WidgetsBindingObserver {
           ref.read(hiveStreetProvider.notifier).removeStreet(street);
         }
       } else {
-        MyLogger("Upload failed").e("data not uploaded");
+        MyLogger("Upload street failed").e("data not uploaded");
       }
     }
   }
@@ -96,6 +118,7 @@ class _MapViewState extends ConsumerState<MapView> with WidgetsBindingObserver {
     ref
         .read(clusteredMarkerProvider.notifier)
         .updateClustersMarker(_currentZoom);
+    ref.read(mapControllerProvider.notifier).update((state) => controller);
   }
 
   Set<Polyline> _getCombinedPolylines() {
@@ -111,7 +134,6 @@ class _MapViewState extends ConsumerState<MapView> with WidgetsBindingObserver {
     final markerData = ref.watch(markerDataProvider);
     bool dialogOpen = ref.watch(drawStreetProvider.notifier).isDialogOpen;
     final clusteredMarker = ref.watch(clusteredMarkerProvider);
-    final drawStreet = ref.watch(drawStreetProvider);
 
     // final loadPolyline = ref.watch(drawStreetProvider);
 /*     useEffect(() {
@@ -142,22 +164,14 @@ class _MapViewState extends ConsumerState<MapView> with WidgetsBindingObserver {
       return null;
     }, [permission]);
 
-    useEffect(() {
-      drawStreet.whenData((street) {
-        setState(() {
-          _polylines = street.polylines;
-          clusteredMarker.updateClusters(zoomLevel: _currentZoom);
-        });
-      });
-      return null;
-    }, [drawStreet]);
+    ref.listen(drawStreetProvider.future, (_, next) async {
+      final data = await next;
 
-    /*   useEffect(() {
-      ref.read(clusteredMarkerProvider.notifier).updateClustersMarker(
-            _currentZoom,
-          );
-      return null;
-    }, [_currentZoom]); */
+      setState(() {
+        _polylines = data.polylines;
+      });
+      clusteredMarker.updateClusters(zoomLevel: _currentZoom);
+    });
 
     void showSyncDialog() {
       showDialog(

@@ -14,6 +14,7 @@ import 'package:survey_app/provider/clustered_marker_provider.dart';
 import 'package:survey_app/utils/app_logger.dart';
 import 'package:survey_app/utils/custom_marker.dart';
 import 'package:survey_app/utils/poly_colors.dart';
+import 'package:uuid/uuid.dart';
 
 import '../api/street_api.dart';
 import '../main.dart';
@@ -45,6 +46,13 @@ Future<bool> updateData(Ref ref, List<Street> newStreets) async {
 Future<bool> updateIssue(Ref ref, List<RouteIssue> newIssue) async {
   final api = ref.watch(streetAPIProvider);
   bool result = await api.updateBulkRouteIssue(newIssue);
+  return result;
+}
+
+@riverpod
+Future<bool> deleteIssue(Ref ref, String id) async {
+  final api = ref.watch(streetAPIProvider);
+  bool result = await api.deleteRouteIssue(id);
   return result;
 }
 
@@ -162,24 +170,6 @@ class DrawStreet extends _$DrawStreet {
     renderMarkers(data.streets);
   }
 
-/*   double _calculateDistancePoint(LatLng p1, LatLng p2) {
-    double distance = double.infinity;
-    try {
-      var pos = Geographic(lon: p1.longitude, lat: p1.latitude);
-
-      var latlng = Geographic(lon: p2.longitude, lat: p2.latitude);
-      var arc = pos.vincenty().inverse(latlng);
-      final distanceKm = arc.distance / 1000.0;
-      if (distanceKm < distance) {
-        distance = distanceKm;
-      }
-      return distance;
-    } catch (e) {
-      d.log(e.toString());
-      return double.infinity;
-    }
-  } */
-
   void getBlockPoint(LatLng? tapPoint) async {
     final routeFunction = await ref.read(routingFnProvider.future);
     final streetProvider = ref.watch(streetDataProvider);
@@ -193,15 +183,25 @@ class DrawStreet extends _$DrawStreet {
       var notes = await showNotesDialog();
       isDialogOpen = false;
       var routeIssueData = RouteIssueData(
+        const Uuid().v4(),
         _selectedStreet!.id.toInt(),
-        true,
+        1,
         notes ?? "",
         "POINT(${blockPoint!.longitude} ${blockPoint.latitude})",
       );
 
-      await addToTmpMarker(blockPoint, routeIssueData);
+/*       var routeIssueHive = RouteIssue(
+        id: const Uuid().v4(),
+        streetId: _selectedStreet!.id.toInt(),
+        blocked: 1,
+        notes: notes ?? "",
+        geom: "POINT(${blockPoint.longitude} ${blockPoint.latitude})",
+      ); */
+
+      //await addToTmpMarker(blockPoint, routeIssueData);
       streetProvider.addRouteIssue(routeIssueData).then((value) {
         reloadDrawStreet();
+        ref.read(hiveRouteIssueProvider.notifier).addRouteIssue(routeIssueData);
       });
     } catch (e) {
       MyLogger("Get block point").e(e.toString());
@@ -285,6 +285,19 @@ class DrawStreet extends _$DrawStreet {
               if (deleted) {
                 reloadDrawStreet();
                 _clearTmpMarker(issue.point);
+                ref
+                    .read(hiveRouteIssueProvider.notifier)
+                    .removeRouteIssue(issue);
+                final deleting =
+                    await ref.read(deleteIssueProvider(issue.id).future);
+                if (deleting) {
+                  MyLogger("Deleting from server").i("Success");
+                } else {
+                  /// Add to hive for later deleting
+                  ref
+                      .read(deletedRouteIssueProvider.notifier)
+                      .addDeletedId(issue.id);
+                }
                 if (context.mounted) {
                   Navigator.of(context).pop();
                 }

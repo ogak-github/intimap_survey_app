@@ -47,7 +47,7 @@ class ProcessedStreetData extends _$ProcessedStreetData {
 
           _processLocation(loc);
           _canProcessLocation = false;
-          _timer = Timer(const Duration(seconds: 20), () {
+          _timer = Timer(const Duration(seconds: 30), () {
             _canProcessLocation = true;
           });
         });

@@ -84,18 +84,19 @@ class StreetAPI {
   Future<bool> updateBulkRouteIssue(List<RouteIssue> routeIssues) async {
     try {
       final jsonData = routeIssues.map((e) => jsonEncode(e)).toList();
-      final response = await _dioClient.put(
-        '/update-route-issues',
+      final response = await _dioClient.post(
+        '/add-route-issue',
         data: jsonData.toString(),
       );
-      MyLogger("Status code").i("${response.statusCode}");
+      MyLogger("Upload route issue status code").i("${response.statusCode}");
       if (response.statusCode != 200) {
         return false;
       }
+      return true;
     } catch (e) {
       MyLogger("API Error").e(e.toString());
+      return false;
     }
-    return false;
   }
 
   Future<List<RouteIssue>> getRouteIssues() async {
@@ -109,6 +110,7 @@ class StreetAPI {
           for (var item in response.data) {
             Map<String, dynamic> map = item;
             RouteIssue s = RouteIssue.fromJson(map);
+            log(s.toJson().toString(), name: "Route Issue API");
             issues.add(s);
           }
 
@@ -121,6 +123,21 @@ class StreetAPI {
     } catch (e) {
       MyLogger("API Error").e(e.toString());
       return issues;
+    }
+  }
+
+  Future<bool> deleteRouteIssue(String id) async {
+    try {
+      final response = await _dioClient.delete(
+        '/delete-route-issues/$id',
+      );
+      if (response.statusCode == 200) {
+        return true;
+      }
+      return false;
+    } catch (e) {
+      MyLogger("API Error").e(e.toString());
+      return false;
     }
   }
 }

@@ -41,20 +41,21 @@ class RouteIssue with _$RouteIssue {
   }
 
   String get insertReplaceQuery {
-    var query = "REPLACE INTO route_issue (street_id, blocked, notes, geom) "
-        "VALUES($streetId, $blocked, '$notes', GeomFromText('$geom', 4326));";
+    var query =
+        "REPLACE INTO route_issue (id, street_id, blocked, notes, geom) "
+        "VALUES('$id', $streetId, $blocked, '$notes', GeomFromText('$geom', 4326));";
     return query;
   }
 }
 
 class RouteIssueData {
-  String id = const Uuid().v4();
+  final String id;
   final int streetId;
-  final bool blocked;
+  final int blocked;
   final String notes;
   final String geom;
 
-  RouteIssueData(this.streetId, this.blocked, this.notes, this.geom);
+  RouteIssueData(this.id, this.streetId, this.blocked, this.notes, this.geom);
 
   String get insertReplaceQuery {
     var query =
