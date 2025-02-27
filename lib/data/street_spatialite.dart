@@ -211,7 +211,8 @@ class StreetSpatialite {
     queries.add("SELECT CreateSpatialIndex('street','geom');");
 
     queries.add("CREATE TABLE $ifNotExists route_issue "
-        "( id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, street_id INTEGER, blocked BOOLEAN,  notes TEXT, FOREIGN KEY (street_id) REFERENCES street(id));");
+        "( id TEXT NOT NULL PRIMARY KEY, street_id INTEGER, blocked BOOLEAN, notes TEXT, FOREIGN KEY (street_id) REFERENCES street(id));");
+    queries.add("CREATE INDEX $ifNotExists rId ON route_issue (id);");
     queries
         .add("CREATE INDEX $ifNotExists rStreet ON route_issue(street_id) ;");
     queries.add(
@@ -306,8 +307,9 @@ class StreetData {
     List<String> queries = [];
 
     for (var routeIssue in routeIssues) {
-      var query = "REPLACE INTO route_issue (street_id, blocked, notes, geom) "
-          "VALUES(${routeIssue.streetId}, ${routeIssue.blocked}, '${routeIssue.notes}', GeomFromText('${routeIssue.geom}', 4326));";
+      var query =
+          "REPLACE INTO route_issue (id, street_id, blocked, notes, geom) "
+          "VALUES(${routeIssue.id} ${routeIssue.streetId}, ${routeIssue.blocked}, '${routeIssue.notes}', GeomFromText('${routeIssue.geom}', 4326));";
       queries.add(query);
     }
 
@@ -323,12 +325,16 @@ class StreetData {
   }
 
   Future<bool> addRouteIssue(RouteIssueData routeIssue) async {
-    MyLogger("Fill data into DB").i(routeIssue.streetId.toString());
+    MyLogger("Fill data into table route_issue").d(routeIssue.id.toString());
+    MyLogger("Query").d(routeIssue.insertReplaceQuery);
     List<String> queries = [];
     queries.add(routeIssue.insertReplaceQuery);
     try {
       //MyLogger("Query Length").i(queries.toString());
-      return (await spatialite).executeQueriesWithTransaction(queries);
+      var result = await (sqliteQueue).then((val) {
+        return val.runQuery(routeIssue.insertReplaceQuery);
+      });
+      return result != null;
     } on PlatformException catch (e) {
       MyLogger("DB Platform Exception").e(e.toString());
       return false;
@@ -525,10 +531,10 @@ class StreetData {
     }
   }
 
-  Future<bool> deleteRouteIssue(int id) async {
+  Future<bool> deleteRouteIssue(String id) async {
     MyLogger("Delete Route Issue").i(id.toString());
     List<String> queries = [];
-    var query = "DELETE FROM route_issue WHERE id = $id";
+    var query = "DELETE FROM route_issue WHERE id = '$id'";
     queries.add(query);
     try {
       var data = await (sqliteQueue).then((val) {

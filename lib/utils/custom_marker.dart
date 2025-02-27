@@ -2,18 +2,19 @@ import 'dart:ui';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'dart:math' as math;
 import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
-Future<BitmapDescriptor> noEntrySignMarker() async {
-  const String assetPath = 'assets/forbidden.png';
+Future<BitmapDescriptor> noEntrySignMarkerOpacity() async {
+  const String assetPath = 'assets/forbidden-opacity.png';
   final ByteData byteData = await rootBundle.load(assetPath);
   final Uint8List bytes = byteData.buffer.asUint8List();
   return BitmapDescriptor.bytes(bytes);
 }
 
-Future<BitmapDescriptor> noEntrySignMarkerOpacity() async {
-  const String assetPath = 'assets/forbidden-opacity.png';
+Future<BitmapDescriptor> noEntrySignMarker() async {
+  const String assetPath = 'assets/forbidden.png';
   final ByteData byteData = await rootBundle.load(assetPath);
   final Uint8List bytes = byteData.buffer.asUint8List();
   return BitmapDescriptor.bytes(bytes);
@@ -72,4 +73,224 @@ Future<BitmapDescriptor> createTextBitmapDescriptor(String text) async {
 
   // Create BitmapDescriptor from image
   return BitmapDescriptor.bytes(pngBytes);
+}
+
+Future<BitmapDescriptor> noEntrySignWithText({
+  String? text,
+  Color textColor = Colors.black,
+  Color textBackgroundColor = Colors.white,
+  Color borderColor = Colors.black,
+  double borderWidth = 2.0,
+  double textPadding = 8.0,
+}) async {
+  // Load the PNG image
+  const String assetPath = 'assets/forbidden.png';
+  final ByteData imageData = await rootBundle.load(assetPath);
+  final ui.Codec imageCodec =
+      await ui.instantiateImageCodec(imageData.buffer.asUint8List());
+  final ui.FrameInfo frameInfo = await imageCodec.getNextFrame();
+  final ui.Image image = frameInfo.image;
+
+  // Create a text painter
+  final TextPainter textPainter = TextPainter(
+    text: TextSpan(
+      text: text,
+      style: TextStyle(
+        color: textColor,
+        fontSize: 24,
+        fontWeight: FontWeight.bold,
+      ),
+    ),
+    textDirection: TextDirection.ltr,
+  )..layout();
+
+  // Calculate the total height and width
+  final double totalWidth = image.width.toDouble() + borderWidth * 2;
+  final double totalHeight = image.height.toDouble() +
+      (text != null && text.isNotEmpty
+          ? textPainter.height + textPadding * 2
+          : 0) +
+      borderWidth * 2;
+
+  // Create a recorder to draw the final image
+  final ui.PictureRecorder recorder = ui.PictureRecorder();
+  final Canvas canvas =
+      Canvas(recorder, Rect.fromLTWH(0, 0, totalWidth, totalHeight));
+
+  // Draw the background
+  final Paint backgroundPaint = Paint()..color = Colors.white;
+  canvas.drawRect(
+      Rect.fromLTWH(0, 0, totalWidth, totalHeight), backgroundPaint);
+
+  // Draw the border
+  final Paint borderPaint = Paint()
+    ..color = borderColor
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = borderWidth;
+  canvas.drawRect(Rect.fromLTWH(0, 0, totalWidth, totalHeight), borderPaint);
+
+  // Draw the image
+  canvas.drawImage(image, Offset(borderWidth, borderWidth), Paint());
+
+  // Draw the text background and text if it's not null or empty
+  if (text != null && text.isNotEmpty) {
+    // Calculate the text background position and size
+    final double textBackgroundWidth = totalWidth - borderWidth * 2;
+    final double textBackgroundHeight = textPainter.height + textPadding * 2;
+    final double textBackgroundX = borderWidth;
+    final double textBackgroundY = image.height.toDouble() + borderWidth;
+
+    // Draw the text background
+    final Paint textBackgroundPaint = Paint()..color = textBackgroundColor;
+    canvas.drawRect(
+      Rect.fromLTWH(
+        textBackgroundX,
+        textBackgroundY,
+        textBackgroundWidth,
+        textBackgroundHeight,
+      ),
+      textBackgroundPaint,
+    );
+
+    // Draw the text
+    final double textX = (totalWidth - textPainter.width) / 2;
+    final double textY = textBackgroundY + textPadding;
+    textPainter.paint(canvas, Offset(textX, textY));
+  }
+
+  // Convert the canvas to an image
+  final ui.Picture picture = recorder.endRecording();
+  final ui.Image finalImage =
+      await picture.toImage(totalWidth.toInt(), totalHeight.toInt());
+
+  // Convert the image to a byte data
+  final ByteData? byteData =
+      await finalImage.toByteData(format: ui.ImageByteFormat.png);
+  final Uint8List byteList = byteData!.buffer.asUint8List();
+
+  // Create and return the BitmapDescriptor
+  return BitmapDescriptor.bytes(byteList);
+}
+
+class CustomMarkerHelper {
+  static const String noEntryAssetPath = 'assets/forbidden.png';
+
+  /// Creates a BitmapDescriptor with a no entry sign from assets and optional text below it
+  /// - Text is displayed with black color on white background with black border
+  /// - Image and text are center-aligned
+  /// - Image has no background
+  /// - Text background size adjusts to text length
+  static Future<BitmapDescriptor> createNoEntryMarkerWithText({
+    String? text,
+    double imageSize = 64.0,
+    double textFontSize = 14.0,
+    double textPadding = 2.0,
+    double borderWidth = 1.0,
+  }) async {
+    // Early return if no text to show just the image
+    if (text == null || text.isEmpty) {
+      return await _createNoEntryMarker(imageSize: imageSize);
+    }
+
+    // Load the image from assets
+    final ByteData imageData = await rootBundle.load(noEntryAssetPath);
+    final Uint8List imageBytes = imageData.buffer.asUint8List();
+    final ui.Codec codec = await ui.instantiateImageCodec(imageBytes);
+    final ui.FrameInfo frameInfo = await codec.getNextFrame();
+    final ui.Image assetImage = frameInfo.image;
+
+    // Calculate the size of the text
+    final TextPainter textPainter = TextPainter(
+      text: TextSpan(
+        text: text,
+        style: TextStyle(
+          color: Colors.black,
+          fontSize: textFontSize,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+
+    // Calculate the total width and height
+    final double totalWidth = math.max(
+        imageSize, textPainter.width + (textPadding * 2) + (borderWidth * 2));
+    final double totalHeight = imageSize +
+        4 +
+        textPainter.height +
+        (textPadding * 2) +
+        (borderWidth * 2);
+
+    // Create a canvas to draw on
+    final ui.PictureRecorder recorder = ui.PictureRecorder();
+    final Canvas canvas = Canvas(recorder);
+
+    // Draw the image centered at the top
+    final double imageLeft = (totalWidth - imageSize) / 2;
+    canvas.drawImage(assetImage, Offset(imageLeft, 0), Paint());
+
+    // Draw the text background
+    final double textBackgroundWidth = textPainter.width + (textPadding * 2);
+    final double textBackgroundHeight = textPainter.height + (textPadding * 2);
+    final double textBackgroundLeft = (totalWidth - textBackgroundWidth) / 2;
+    final double textBackgroundTop = imageSize + 4;
+
+    final Rect textBackgroundRect = Rect.fromLTWH(
+      textBackgroundLeft,
+      textBackgroundTop,
+      textBackgroundWidth,
+      textBackgroundHeight,
+    );
+
+    // Draw white background
+    canvas.drawRect(
+      textBackgroundRect,
+      Paint()..color = Colors.white,
+    );
+
+    // Draw black border
+    canvas.drawRect(
+      textBackgroundRect,
+      Paint()
+        ..color = Colors.black
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = borderWidth,
+    );
+
+    // Draw the text
+    final double textLeft = textBackgroundLeft + textPadding;
+    final double textTop = textBackgroundTop + textPadding;
+    textPainter.paint(canvas, Offset(textLeft, textTop));
+
+    // Convert to image
+    final ui.Picture picture = recorder.endRecording();
+    final ui.Image resultImage = await picture.toImage(
+      totalWidth.ceil(),
+      totalHeight.ceil(),
+    );
+
+    // Convert to BitmapDescriptor
+    final ByteData? byteData = await resultImage.toByteData(
+      format: ui.ImageByteFormat.png,
+    );
+
+    if (byteData == null) {
+      throw Exception('Failed to convert image to byte data');
+    }
+
+    final Uint8List uint8List = byteData.buffer.asUint8List();
+    return BitmapDescriptor.bytes(uint8List);
+  }
+
+  /// Creates a BitmapDescriptor with just the no entry sign from assets
+  static Future<BitmapDescriptor> _createNoEntryMarker({
+    required double imageSize,
+  }) async {
+    // Load the image from assets
+    final ByteData imageData = await rootBundle.load(noEntryAssetPath);
+    final Uint8List imageBytes = imageData.buffer.asUint8List();
+
+    // Convert to BitmapDescriptor directly
+    return BitmapDescriptor.bytes(imageBytes);
+  }
 }

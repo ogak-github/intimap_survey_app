@@ -10,6 +10,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:survey_app/data/routing_fn.dart';
 import 'package:survey_app/data/street_spatialite.dart';
 import 'package:survey_app/model/route_issue.dart';
+import 'package:survey_app/provider/clustered_marker_provider.dart';
 import 'package:survey_app/utils/app_logger.dart';
 import 'package:survey_app/utils/custom_marker.dart';
 import 'package:survey_app/utils/poly_colors.dart';
@@ -197,7 +198,6 @@ class DrawStreet extends _$DrawStreet {
         notes ?? "",
         "POINT(${blockPoint!.longitude} ${blockPoint.latitude})",
       );
-      d.log(notes.toString(), name: "block point");
 
       await addToTmpMarker(blockPoint, routeIssueData);
       streetProvider.addRouteIssue(routeIssueData).then((value) {
@@ -218,17 +218,22 @@ class DrawStreet extends _$DrawStreet {
 
   void renderMarkers(List<Street> street) async {
     Set<Marker> blockedMarker = {};
-    Set<Marker> textMarker = {};
+    //Set<Marker> textMarker = {};
     final streetProvider = ref.watch(streetDataProvider);
     List<RouteIssue> routeIssues = await streetProvider
         .getRouteIssue(street.map((e) => e.id.toInt()).toList());
     for (var issue in routeIssues) {
+      final BitmapDescriptor descriptor =
+          await CustomMarkerHelper.createNoEntryMarkerWithText(
+              text: issue.notes, imageSize: 32.0, textFontSize: 12.0);
       blockedMarker.add(
         Marker(
           markerId: MarkerId(issue.id.toString()),
           position: issue.point,
-          anchor: const Offset(0.5, 0.5),
-          icon: await noEntrySignMarker(),
+          anchor: issue.notes == null || issue.notes == ""
+              ? const Offset(0.5, 0.5)
+              : const Offset(0.5, 0.3),
+          icon: descriptor, //await noEntrySignWithText(text: issue.notes),
           onTap: () async {
             // Remove the marker from the state and database
             isDialogOpen = true;
@@ -240,18 +245,19 @@ class DrawStreet extends _$DrawStreet {
           },
         ),
       );
-      if (issue.notes != null && issue.notes != "") {
+      /*  if (issue.notes != null && issue.notes != "") {
         textMarker.add(Marker(
-          markerId: MarkerId("${issue.id}text"),
+          markerId: MarkerId("${issue.id}-text"),
           position: issue.point,
           anchor: const Offset(0.5, -1.0),
           icon: await createTextBitmapDescriptor(issue.notes!),
         ));
-      }
+      } */
     }
     d.log(blockedMarker.length.toString(), name: "Marker length");
-    state = AsyncValue.data(MapData(
-        {...state.value!.polylines}, {...blockedMarker, ...textMarker}));
+
+    state = AsyncValue.data(
+        MapData({...state.value!.polylines}, {...blockedMarker}));
   }
 
   Future<void> showDeleteMarkerDialog(

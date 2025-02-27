@@ -335,7 +335,7 @@ final loadAllStreetProvider =
 );
 
 typedef _$LoadAllStreet = AutoDisposeAsyncNotifier<void>;
-String _$drawStreetHash() => r'b61bdb4df57cefdbd15f0e338d9848e808db9158';
+String _$drawStreetHash() => r'15d8592255a9e6252600c43d08efef7cdaa2f9e1';
 
 /// See also [DrawStreet].
 @ProviderFor(DrawStreet)

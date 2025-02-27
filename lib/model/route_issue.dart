@@ -4,6 +4,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:geobase/geobase.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:uuid/uuid.dart';
 
 part 'route_issue.freezed.dart';
 part 'route_issue.g.dart';
@@ -14,7 +15,7 @@ class RouteIssue with _$RouteIssue {
 
   @HiveType(typeId: 2, adapterName: "RouteIssueAdapter")
   const factory RouteIssue({
-    @HiveField(0) required int id,
+    @HiveField(0) required String id,
     @HiveField(1) @JsonKey(name: "street_id") required int streetId,
     @HiveField(2) required int blocked,
     @HiveField(3) String? notes,
@@ -47,6 +48,7 @@ class RouteIssue with _$RouteIssue {
 }
 
 class RouteIssueData {
+  String id = const Uuid().v4();
   final int streetId;
   final bool blocked;
   final String notes;
@@ -55,8 +57,9 @@ class RouteIssueData {
   RouteIssueData(this.streetId, this.blocked, this.notes, this.geom);
 
   String get insertReplaceQuery {
-    var query = "REPLACE INTO route_issue (street_id, blocked, notes, geom) "
-        "VALUES($streetId, $blocked, '$notes', GeomFromText('$geom', 4326));";
+    var query =
+        "REPLACE INTO route_issue (id, street_id, blocked, notes, geom) "
+        "VALUES('$id', $streetId, $blocked, '$notes', GeomFromText('$geom', 4326));";
     return query;
   }
 }

@@ -6,8 +6,8 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:geobase/geobase.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:sliding_up_panel2/sliding_up_panel2.dart';
 import 'package:survey_app/data/street_spatialite.dart';
+import 'package:survey_app/provider/clustered_marker_provider.dart';
 import 'package:survey_app/provider/hive_street_provider.dart';
 import 'package:survey_app/provider/loading_state.dart';
 import 'package:survey_app/provider/my_location_provider.dart';
@@ -16,7 +16,6 @@ import 'package:survey_app/ui/components/street_info.dart';
 import 'package:survey_app/utils/app_logger.dart';
 import '../provider/compute_data_provider.dart';
 import 'components/custom_text_box.dart';
-
 
 class MapView extends StatefulHookConsumerWidget {
   const MapView({super.key});
@@ -32,10 +31,12 @@ class _MapViewState extends ConsumerState<MapView> with WidgetsBindingObserver {
   double latitude = -0.7893;
   double longitude = 113.9213;
   Set<Polyline> _polylines = {};
-  Set<Marker> _markers = {};
+  final Set<Marker> _markers = {};
+
   final Set<Polyline> _selectedPolyline = {};
   bool _myLocationEnabled = false;
   Timer? timer;
+  double _currentZoom = 15;
 
   @override
   void initState() {
@@ -86,11 +87,15 @@ class _MapViewState extends ConsumerState<MapView> with WidgetsBindingObserver {
     }
   }
 
-  void _onMapCreated(GoogleMapController controller) {
+  void _onMapCreated(GoogleMapController controller) async {
     _mapController = controller;
     setState(() {
       _mapCreated = true;
     });
+    _currentZoom = await controller.getZoomLevel();
+    ref
+        .read(clusteredMarkerProvider.notifier)
+        .updateClustersMarker(_currentZoom);
   }
 
   Set<Polyline> _getCombinedPolylines() {
@@ -105,6 +110,8 @@ class _MapViewState extends ConsumerState<MapView> with WidgetsBindingObserver {
     // final inMemoryStreet = ref.watch(inMemoryStreetProvider);
     final markerData = ref.watch(markerDataProvider);
     bool dialogOpen = ref.watch(drawStreetProvider.notifier).isDialogOpen;
+    final clusteredMarker = ref.watch(clusteredMarkerProvider);
+    final drawStreet = ref.watch(drawStreetProvider);
 
     // final loadPolyline = ref.watch(drawStreetProvider);
 /*     useEffect(() {
@@ -135,17 +142,22 @@ class _MapViewState extends ConsumerState<MapView> with WidgetsBindingObserver {
       return null;
     }, [permission]);
 
-    ref.listen(drawStreetProvider.future, (previous, next) async {
-      var street = await next;
-      setState(() {
-        _polylines = street.polylines;
-        _markers = street.markers;
-      });
-    });
-
     useEffect(() {
+      drawStreet.whenData((street) {
+        setState(() {
+          _polylines = street.polylines;
+          clusteredMarker.updateClusters(zoomLevel: _currentZoom);
+        });
+      });
       return null;
-    }, [selectedStreet]);
+    }, [drawStreet]);
+
+    /*   useEffect(() {
+      ref.read(clusteredMarkerProvider.notifier).updateClustersMarker(
+            _currentZoom,
+          );
+      return null;
+    }, [_currentZoom]); */
 
     void showSyncDialog() {
       showDialog(
@@ -204,13 +216,19 @@ class _MapViewState extends ConsumerState<MapView> with WidgetsBindingObserver {
             mapType: MapType.normal,
             polylines: _getCombinedPolylines(),
             markers: {
-              ..._markers,
+              ...clusteredMarker.getClusteredMarkers(),
               ...markerData.map((e) => e.marker),
               ...markerData.map((e) => e.txtMarker != null
                   ? e.txtMarker!
                   : const Marker(markerId: MarkerId("empty")))
             },
             onMapCreated: _onMapCreated,
+            onCameraMove: (position) {
+              setState(() {
+                _currentZoom = position.zoom;
+              });
+              clusteredMarker.updateClusters(zoomLevel: _currentZoom);
+            },
             zoomControlsEnabled: false,
             initialCameraPosition:
                 CameraPosition(target: LatLng(latitude, longitude), zoom: 2),
