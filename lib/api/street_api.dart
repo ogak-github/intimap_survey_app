@@ -144,7 +144,7 @@ class StreetAPI {
 
 final streetAPIProvider = Provider<StreetAPI>((ref) {
   final box = Hive.box('base_url');
-  var currentUrl = 'https://7ae8-112-78-165-162.ngrok-free.app/api';
+  var currentUrl = 'https://a24c-182-253-232-14.ngrok-free.app/api';
   var urlFromBox = box.get('base_url');
   if (urlFromBox != null) {
     currentUrl = urlFromBox;

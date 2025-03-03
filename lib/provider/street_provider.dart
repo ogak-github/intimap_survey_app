@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:developer' as d;
 import 'dart:isolate';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -10,7 +11,6 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:survey_app/data/routing_fn.dart';
 import 'package:survey_app/data/street_spatialite.dart';
 import 'package:survey_app/model/route_issue.dart';
-import 'package:survey_app/provider/clustered_marker_provider.dart';
 import 'package:survey_app/utils/app_logger.dart';
 import 'package:survey_app/utils/custom_marker.dart';
 import 'package:survey_app/utils/poly_colors.dart';
@@ -62,45 +62,53 @@ class LoadAllStreet extends _$LoadAllStreet {
   FutureOr<void> build() async {
     MyLogger("Load all street").i("Called");
     EasyLoading.show(status: 'Sync data...');
-    final streetBox = Hive.box<Street>('streets');
-    if (streetBox.isNotEmpty) {
-      final data = streetBox.values.toList();
-      final providerResult = await ref.read(updateDataProvider(data).future);
+    try {
+      final streetBox = Hive.box<Street>('streets');
+      if (streetBox.isNotEmpty) {
+        final data = streetBox.values.toList();
+        final providerResult = await ref.read(updateDataProvider(data).future);
 
-      if (providerResult) {
-        for (var street in data) {
-          ref.read(hiveStreetProvider.notifier).removeStreet(street);
-        }
-      } else {
-        MyLogger("Upload failed").e("data not uploaded");
-      }
-    }
-
-    final issueBox = Hive.box<RouteIssue>('route_issues');
-    if (issueBox.isNotEmpty) {
-      final data = issueBox.values.toList();
-      final provider = await ref.read(updateIssueProvider(data).future);
-      if (provider) {
-        MyLogger("Update issue").i("Success");
-        for (var issue in data) {
-          ref.read(hiveRouteIssueProvider.notifier).removeRouteIssue(issue);
+        if (providerResult) {
+          for (var street in data) {
+            ref.read(hiveStreetProvider.notifier).removeStreet(street);
+          }
+        } else {
+          MyLogger("Upload failed").e("data not uploaded");
         }
       }
+
+      final issueBox = Hive.box<RouteIssue>('route_issues');
+      if (issueBox.isNotEmpty) {
+        final data = issueBox.values.toList();
+        final provider = await ref.read(updateIssueProvider(data).future);
+        if (provider) {
+          MyLogger("Update issue").i("Success");
+          for (var issue in data) {
+            ref.read(hiveRouteIssueProvider.notifier).removeRouteIssue(issue);
+          }
+        }
+      }
+
+      final api = ref.watch(streetAPIProvider);
+      final prov = ref.watch(streetDataProvider);
+      var streets = await api.loadAll();
+      var issues = await api.getRouteIssues();
+      MyLogger("Total loaded streets").d(streets.length.toString());
+      MyLogger("Total loaded issues").d(issues.length.toString());
+      EasyLoading.dismiss();
+
+      /// call fillDataIntoDB
+      EasyLoading.show(status: 'Processing data...');
+      await runInBackground(streets, prov);
+      await runInBackground2(issues, prov);
+      EasyLoading.dismiss();
+    } catch (e) {
+      MyLogger("Load all street").e(e.toString());
+      DioException de = e as DioException;
+      EasyLoading.showError("${de.message}", dismissOnTap: true);
+    } finally {
+      EasyLoading.dismiss();
     }
-
-    final api = ref.watch(streetAPIProvider);
-    final prov = ref.watch(streetDataProvider);
-    var streets = await api.loadAll();
-    var issues = await api.getRouteIssues();
-    MyLogger("Total loaded streets").d(streets.length.toString());
-    MyLogger("Total loaded issues").d(issues.length.toString());
-    EasyLoading.dismiss();
-
-    /// call fillDataIntoDB
-    EasyLoading.show(status: 'Processing data...');
-    await runInBackground(streets, prov);
-    await runInBackground2(issues, prov);
-    EasyLoading.dismiss();
   }
 
   Future<void> runInBackground(
@@ -140,7 +148,7 @@ class MapData {
   MapData(this.polylines, this.markers);
 }
 
-@Riverpod(keepAlive: true)
+@riverpod
 class DrawStreet extends _$DrawStreet {
   Street? _selectedStreet;
   bool isDialogOpen = false;
@@ -152,14 +160,13 @@ class DrawStreet extends _$DrawStreet {
     Set<Marker> markers = {};
 
     //final data = await ref.watch(_processedStreetDataProvider.future);
+
     ref.listen(processedStreetDataProvider.future, (previous, next) async {
       var data = await next;
 
       renderPolylines(data.streets, data.selectedStreet);
       renderMarkers(data.streets);
     });
-
-    ref.onDispose(() {});
 
     return MapData(polylines, markers);
   }
@@ -173,7 +180,7 @@ class DrawStreet extends _$DrawStreet {
   void getBlockPoint(LatLng? tapPoint) async {
     final routeFunction = await ref.read(routingFnProvider.future);
     final streetProvider = ref.watch(streetDataProvider);
-
+    if (_selectedStreet == null) return;
     try {
       var blockPoint = await routeFunction?.getTapPointFromPolylines(
           tapPoint!, _selectedStreet!.id.toString());
@@ -245,14 +252,6 @@ class DrawStreet extends _$DrawStreet {
           },
         ),
       );
-      /*  if (issue.notes != null && issue.notes != "") {
-        textMarker.add(Marker(
-          markerId: MarkerId("${issue.id}-text"),
-          position: issue.point,
-          anchor: const Offset(0.5, -1.0),
-          icon: await createTextBitmapDescriptor(issue.notes!),
-        ));
-      } */
     }
     d.log(blockedMarker.length.toString(), name: "Marker length");
 

@@ -1,13 +1,11 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
+
 import 'package:location/location.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:survey_app/provider/compute_data_provider.dart';
 
-import '../utils/app_logger.dart';
+
 
 part 'my_location_provider.g.dart';
 
@@ -85,80 +83,5 @@ class RequestPermission extends _$RequestPermission {
       return true;
     }
     return false;
-  }
-}
-
-@Riverpod(keepAlive: true)
-class MyCurrentLocation extends _$MyCurrentLocation {
-  @override
-  LocationData? build() {
-    Future.microtask(() {
-      _watchLocation();
-    });
-
-    return null;
-  }
-
-  /*  void _subsribeLocation() {
-    final listener = ref.listen<Future<LocationData?>>(
-        locationUpdateProvider.future, (prev, next) async {
-      final pos = await next;
-      if (pos != null) {
-        if (kDebugMode && pos.isMock != true) return;
-        MyLogger("Current position").i(pos.speed.toString());
-        state = pos;
-      }
-    });
-    ref.onDispose(() {
-      AppLogger().logger.d("MyLocationProvider disposed");
-      listener.close();
-    });
-  } */
-
-  void _watchLocation() {
-    final lc = Location();
-    lc.changeSettings(
-        accuracy: LocationAccuracy.navigation,
-        interval: kDebugMode ? 12000 : 30000);
-    lc.onLocationChanged.listen((event) {
-      state = event;
-    }).onDone(() {
-      AppLogger().logger.d("OnLocationChanged done");
-    });
-
-    ref.onDispose(() {
-      AppLogger().logger.d("MyLocationProvider disposed");
-    });
-  }
-
-  void followLocation() {
-    final Location lc = Location();
-    lc.onLocationChanged.listen((event) {
-      state = event;
-    });
-  }
-}
-
-@Riverpod(keepAlive: true)
-bool hasLocation(Ref ref) {
-  AppLogger().logger.d("Rebuilding hasLocation");
-  return ref.watch(myLocationProvider.select((value) => value != null));
-}
-
-@Riverpod(keepAlive: true)
-class LocationUpdate extends _$LocationUpdate {
-  @override
-  Stream<LocationData?> build() async* {
-    AppLogger().logger.d("locationUpdateProvider rebuild");
-    final requestStatus = await ref.watch(checkPermissionProvider.future);
-
-    if (requestStatus != true) {
-      yield null;
-      return;
-    }
-
-    await Location()
-        .changeSettings(accuracy: LocationAccuracy.navigation, interval: 1000);
-    yield* Location().onLocationChanged;
   }
 }

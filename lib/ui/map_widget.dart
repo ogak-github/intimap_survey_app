@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
@@ -13,8 +12,9 @@ import 'package:survey_app/provider/my_location_provider.dart';
 import 'package:survey_app/provider/street_provider.dart';
 import 'package:survey_app/ui/components/street_info.dart';
 import 'package:survey_app/utils/app_logger.dart';
-import '../model/route_issue.dart';
+import '../model/user_state.dart';
 import '../provider/compute_data_provider.dart';
+import '../provider/location_service.dart';
 import 'components/custom_text_box.dart';
 
 final mapControllerProvider =
@@ -64,7 +64,7 @@ class _MapViewState extends ConsumerState<MapView> with WidgetsBindingObserver {
     }
   }
 
-  checkForChanges() async {
+  Future<void> checkForChanges() async {
     final deletedRouteIssueId = ref.read(deletedRouteIssueProvider);
     MyLogger("Changes Recorded for undeleted Route Issue")
         .i(deletedRouteIssueId.length.toString());
@@ -134,17 +134,17 @@ class _MapViewState extends ConsumerState<MapView> with WidgetsBindingObserver {
     final markerData = ref.watch(markerDataProvider);
     bool dialogOpen = ref.watch(drawStreetProvider.notifier).isDialogOpen;
     final clusteredMarker = ref.watch(clusteredMarkerProvider);
+    final locationService = ref.watch(locationServiceProvider);
+    final currentMapState = ref.watch(currentMapStateProvider);
 
-    // final loadPolyline = ref.watch(drawStreetProvider);
-/*     useEffect(() {
-      loadPolyline.whenData((street) {
-        setState(() {
-          _polylines = street;
-        });
+    ref.listen(currentMapStateProvider, (_, next) {
+      if (next == null) return;
+      setState(() {
+        _currentZoom = next.zoom;
+        latitude = next.latitude;
+        longitude = next.longitude;
       });
-
-      return null;
-    }, [loadPolyline]); */
+    });
 
     useEffect(() {
       _checkAndSyncDatabase().then((v) async {
@@ -173,30 +173,6 @@ class _MapViewState extends ConsumerState<MapView> with WidgetsBindingObserver {
       clusteredMarker.updateClusters(zoomLevel: _currentZoom);
     });
 
-    void showSyncDialog() {
-      showDialog(
-          context: context,
-          builder: (context) {
-            return AlertDialog(
-              title: const Text("Sync Data"),
-              content: const Text("Are you sure you want to sync data?"),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text("Cancel"),
-                ),
-                TextButton(
-                  child: const Text("Sync"),
-                  onPressed: () {
-                    ref.read(loadAllStreetProvider);
-                    Navigator.of(context).pop();
-                  },
-                )
-              ],
-            );
-          });
-    }
-
     void Function(LatLng)? onLongPress(LatLng arg) {
       MyLogger("Map long press").d(arg.toString());
       ref.read(drawStreetProvider.notifier).getBlockPoint(arg);
@@ -207,23 +183,6 @@ class _MapViewState extends ConsumerState<MapView> with WidgetsBindingObserver {
     return Scaffold(
       key: _scaffoldKey,
       extendBodyBehindAppBar: true,
-      /*   drawer: Drawer(
-          child: ListView(
-        children: [
-          const DrawerHeader(
-            decoration: BoxDecoration(
-              color: Colors.blue,
-            ),
-            child: Text('Drawer Header'),
-          ),
-          ListTile(
-            title: const Text('Sync Data'),
-            onTap: () {
-              showSyncDialog();
-            },
-          ),
-        ],
-      )), */
       body: Stack(
         children: [
           GoogleMap(
@@ -242,17 +201,25 @@ class _MapViewState extends ConsumerState<MapView> with WidgetsBindingObserver {
                 _currentZoom = position.zoom;
               });
               clusteredMarker.updateClusters(zoomLevel: _currentZoom);
+
+              Future.delayed(const Duration(seconds: 10), () {
+                ref
+                    .read(currentMapStateProvider.notifier)
+                    .updateMapState(MapState(
+                      latitude: position.target.latitude,
+                      longitude: position.target.longitude,
+                      zoom: position.zoom,
+                    ));
+              });
             },
             zoomControlsEnabled: false,
-            initialCameraPosition:
-                CameraPosition(target: LatLng(latitude, longitude), zoom: 2),
+            initialCameraPosition: CameraPosition(
+                target: LatLng(currentMapState?.latitude ?? latitude,
+                    currentMapState?.longitude ?? longitude),
+                zoom: currentMapState?.zoom ?? _currentZoom),
             myLocationEnabled: _myLocationEnabled,
             myLocationButtonEnabled: false,
             onTap: (arg) async {
-              /*  ref.read(focusedStreetProvider.notifier).clear();
-                await panelCtrl.close(); */
-              // ref.read(drawStreetProvider.notifier).tapPoint(arg);
-              //log(arg.toString(), name: "Tapped");
               ref
                   .read(tapPointProvider.notifier)
                   .update((state) => state = null);
@@ -268,25 +235,15 @@ class _MapViewState extends ConsumerState<MapView> with WidgetsBindingObserver {
                   padding: const EdgeInsets.only(top: 20),
                   child: Row(
                     children: [
-                      FloatingActionButton.small(
-                        child: const Icon(Icons.refresh),
-                        onPressed: () {
-                          ref.invalidate(inMemoryStreetProvider);
-                          /* ref
-                              .read(drawStreetProvider.notifier)
-                              .loadStreetData(); */
-                        },
-                      ),
                       const SizedBox(width: 5),
                       FloatingActionButton.small(
                         child: const Icon(Icons.sync),
-                        onPressed: () {
+                        onPressed: () async {
                           final hiveStreet = ref.read(hiveStreetProvider);
                           if (hiveStreet.isNotEmpty) {
-                            showSyncDialog();
-                          } else {
-                            ref.read(loadAllStreetProvider);
+                            await checkForChanges();
                           }
+                          ref.read(loadAllStreetProvider);
                         },
                       ),
                     ],
@@ -308,7 +265,22 @@ class _MapViewState extends ConsumerState<MapView> with WidgetsBindingObserver {
             Positioned(
               left: 15,
               bottom: 15,
-              child: ZoomControlFab(controller: _mapController!),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  ZoomControlFab(controller: _mapController!),
+                  const SizedBox(width: 5),
+                  Visibility(
+                    visible: locationService.speedInKm > 0,
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: CustomTextBox(
+                          text:
+                              "${locationService.speedInKm.toStringAsFixed(1)} km/h"),
+                    ),
+                  ),
+                ],
+              ),
             ),
             Visibility(
               visible: selectedStreet != null && dialogOpen == false,

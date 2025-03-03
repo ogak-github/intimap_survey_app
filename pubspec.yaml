@@ -61,10 +61,10 @@ dependencies:
   hive: ^2.2.3
   hive_flutter: ^1.1.0
   flutter_easyloading: ^3.0.5
-  sliding_up_panel2: ^3.3.0+1
   crypto: ^3.0.6
   uuid: ^4.5.1
   markers_cluster_google_maps_flutter: ^0.1.0+2
+
 
 
 

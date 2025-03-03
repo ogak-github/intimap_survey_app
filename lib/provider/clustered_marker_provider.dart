@@ -27,13 +27,6 @@ class ClusteredMarker extends _$ClusteredMarker {
             .then((val) => clusterManager.updateClusters(zoomLevel: val));
       }
     });
-
-    /*   mapData.asStream().listen((data) {
-      for (var marker in data.markers) {
-        clusterManager.addMarker(marker);
-      }
-    });
- */
     return clusterManager;
   }
 

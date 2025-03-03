@@ -465,11 +465,12 @@ final loadAllStreetProvider =
 );
 
 typedef _$LoadAllStreet = AutoDisposeAsyncNotifier<void>;
-String _$drawStreetHash() => r'6ab8f357c4240415e17997e79afb933105990eea';
+String _$drawStreetHash() => r'af35061a44f9fd22034be97433f92b23d90ac9b8';
 
 /// See also [DrawStreet].
 @ProviderFor(DrawStreet)
-final drawStreetProvider = AsyncNotifierProvider<DrawStreet, MapData>.internal(
+final drawStreetProvider =
+    AutoDisposeAsyncNotifierProvider<DrawStreet, MapData>.internal(
   DrawStreet.new,
   name: r'drawStreetProvider',
   debugGetCreateSourceHash:
@@ -478,7 +479,7 @@ final drawStreetProvider = AsyncNotifierProvider<DrawStreet, MapData>.internal(
   allTransitiveDependencies: null,
 );
 
-typedef _$DrawStreet = AsyncNotifier<MapData>;
+typedef _$DrawStreet = AutoDisposeAsyncNotifier<MapData>;
 String _$loadedStreetDataHash() => r'3452e0517be35e20b14648ec2f0b068353a2d948';
 
 /// See also [LoadedStreetData].

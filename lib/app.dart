@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:survey_app/data/hive_setup.dart';
@@ -19,9 +19,7 @@ void app() async {
     MyLogger("Checking database").e(e.toString());
   }
 
-  if (kDebugMode) {
-    return _runThisApp();
-  }
+  return _runThisApp();
 }
 
 void _runThisApp() async {

@@ -4,6 +4,7 @@ import 'package:survey_app/utils/app_logger.dart';
 
 import '../model/route_issue.dart';
 import '../model/street.dart';
+import '../model/user_state.dart';
 
 part 'hive_street_provider.g.dart';
 
@@ -83,6 +84,22 @@ class DeletedRouteIssue extends _$DeletedRouteIssue {
   Future<void> removeDeletedId(String id) async {
     final routeIssueBox = Hive.box<String>('deleted_issue_id');
     routeIssueBox.delete(id);
+    ref.invalidateSelf();
+  }
+}
+
+@riverpod
+class CurrentMapState extends _$CurrentMapState {
+  @override
+  MapState? build() {
+    final Box<MapState> mapStateBox = Hive.box<MapState>('map_state');
+    var mapState = mapStateBox.get('map_state');
+    return mapState;
+  }
+
+  Future<void> updateMapState(MapState mapState) async {
+    final mapStateBox = Hive.box<MapState>('map_state');
+    mapStateBox.put('map_state', mapState);
     ref.invalidateSelf();
   }
 }
