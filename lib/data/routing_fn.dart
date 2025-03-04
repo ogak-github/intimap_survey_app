@@ -1,3 +1,6 @@
+import 'dart:isolate';
+
+import 'package:flutter/foundation.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart';
 import 'package:survey_app/data/street_spatialite.dart';
@@ -66,8 +69,11 @@ class RoutingFn {
 """;
 /* AND ST_GeometryType(geom) <> 'ST_Point' */
 
+    /* final dataRaw =
+        await (await _streetData.sqliteQueue).queueQuery(query2.trim()); */
     final dataRaw =
-        await (await _streetData.sqliteQueue).queueQuery(query2.trim());
+        await (await _streetData.sqliteQueue).runQuery(query2.trim());
+
     if (dataRaw == null) return null;
     // final queryError = result.error;
     // if (queryError != null) {
@@ -76,42 +82,13 @@ class RoutingFn {
     // }
 
     // final dataRaw = await result.fetchAll();
-    final routingPoints = dataRaw
-        .map((e) {
-          if (e['pointPosition'] == null || e['fixedPoint'] == null) {
-            return null;
-          }
-          Street st = Street(
-            id: e['id'],
-            osmId: e["osm_id"],
-            name: e['nama'],
-            truk: e['truk'],
-            pickup: e['pickup'],
-            roda3: e['roda3'],
-            meta: e['meta'],
-            lastModifiedTime: DateTime.parse(e['last_modified_time']),
-            geom: e['geom'],
-          );
-          return RoutingPoint2(
-              id: e['id'],
-              street: st,
-              distanceToRoute: e['distanceToRoute'],
-              queryId: e['queryId'],
-              originalPoint: e['originalPoint'],
-              fixedPoint: e['fixedPoint'],
-              nextPoint: e['nextPoint'],
-              pointPosition: e['pointPosition'],
-              routeLength: e['routeLength'],
-              distanceLeft: e['distanceLeft'],
-              lineHeading: e['lineHeading']);
-        })
-        .whereType<RoutingPoint2>()
-        .toList();
-    if (routingPoints.isEmpty) {
+    final routingPoints2 = await _processRoutingPoints(dataRaw);
+
+    if (routingPoints2.isEmpty) {
       // log("Segment calculate error, empty data ${json.encode(dataRaw)}");
     }
 
-    return routingPoints;
+    return routingPoints2;
   }
 
   Future<LatLng> getTapPointFromPolylines(
@@ -159,8 +136,10 @@ class RoutingFn {
   bool get isBusy => _busy;
   String? get pid => _pid;
 
-  double headingDifference(double heading1, double heading2) {
-    return (180 - (((heading1 - heading2).abs()) - 180).abs());
+  Future<double> headingDifference(double heading1, double heading2) async {
+    return await Isolate.run(() {
+      return (180 - (((heading1 - heading2).abs()) - 180).abs());
+    });
   }
 
   Future<SelectedRouteInfo2?> getRouteSegment(
@@ -220,18 +199,19 @@ class RoutingFn {
     } */
 
     final result =
-        _getMatchingPoint(listRoutingPoint, location, uniqId: newUniqId);
+        await _getMatchingPoint(listRoutingPoint, location, uniqId: newUniqId);
     defer();
     return result;
   }
 
-  SelectedRouteInfo2? _getMatchingPoint(
+  Future<SelectedRouteInfo2?> _getMatchingPoint(
     List<RoutingPoint2> listRoutingPoint,
     LocationData location, {
     int distanceToRoute = 10,
     String uniqId = "",
-  }) {
+  }) async {
     /*  final newLogger = routingLog + "uid: $uniqId-$distanceToRoute"; */
+
     const maxDistanceToRoute = 50;
     final flistRoutingPoint = listRoutingPoint
         .where((e) => e.distanceToRoute < distanceToRoute)
@@ -273,8 +253,8 @@ class RoutingFn {
     RoutingPoint2? minPoint;
     for (final point in flistRoutingPoint) {
       var logTrace = "";
-      final headingDiff =
-          headingDifference(point.lineHeading ?? 0, location.heading ?? 0);
+      final headingDiff = await headingDifference(
+          point.lineHeading ?? 0, location.heading ?? 0);
       if (point.id < lastPointX.id && headingDiff < 90) {
         // Going back to previous route segment
         if (point.pointPosition < 1.0) {
@@ -335,54 +315,54 @@ class RoutingFn {
     var datetime = DateTime.now();
     var matchType = RouteMatchType.outOfRoute;
 
-    if (matchPoint.containsKey(RouteMatchType.forward)) {
-      matchType = RouteMatchType.forward;
-      minPoint = matchPoint[RouteMatchType.forward];
-      datetime = lastRouteInfoX.firstMatchTime;
-      /*  newLogger.d(
+/*       if (matchPoint.containsKey(RouteMatchType.forward)) {
+        matchType = RouteMatchType.forward;
+        minPoint = matchPoint[RouteMatchType.forward];
+        datetime = lastRouteInfoX.firstMatchTime;
+        /*  newLogger.d(
           "Vehicle -> ${minPoint!.id} ${minPoint.pointPosition.toStringAsFixed(2)}"); */
-      if (matchPoint.containsKey(RouteMatchType.backward)) {
-        matchType = RouteMatchType.backward;
-        minPoint = matchPoint[RouteMatchType.backward];
-        datetime = lastRouteInfoX.firstMatchTime;
-        MyLogger("Match Point").d(
-            "Vehicle <- ${minPoint!.id} ${minPoint.pointPosition.toStringAsFixed(2)}");
-      } else if (matchPoint.containsKey(RouteMatchType.prevSegment)) {
-        matchType = RouteMatchType.prevSegment;
-        minPoint = matchPoint[RouteMatchType.prevSegment];
-        MyLogger("Match Point").d(
-            "Back into previous route segment ${minPoint!.id} ${minPoint.pointPosition.toStringAsFixed(2)}");
-      } else if (matchPoint.containsKey(RouteMatchType.jumpSegment)) {
-        matchType = RouteMatchType.jumpSegment;
-        minPoint = matchPoint[RouteMatchType.jumpSegment];
-        MyLogger("Match Point").d(
-            "Jump into next route segment ${minPoint!.id} ${minPoint.pointPosition.toStringAsFixed(2)}");
-      } else if (lastRouteInfoX.matchType == RouteMatchType.outOfRoute) {
-        datetime = lastRouteInfoX.firstMatchTime;
-        MyLogger("Match Point").d("User still out of route 2!");
-      }
-
-      if (minPoint != null) {
-        var mPoint = minPoint;
-        if (mPoint.lineHeading == null) {
-          mPoint = mPoint.copyWith(lineHeading: lastPointX.lineHeading);
+        if (matchPoint.containsKey(RouteMatchType.backward)) {
+          matchType = RouteMatchType.backward;
+          minPoint = matchPoint[RouteMatchType.backward];
+          datetime = lastRouteInfoX.firstMatchTime;
+          MyLogger("Match Point").d(
+              "Vehicle <- ${minPoint!.id} ${minPoint.pointPosition.toStringAsFixed(2)}");
+        } else if (matchPoint.containsKey(RouteMatchType.prevSegment)) {
+          matchType = RouteMatchType.prevSegment;
+          minPoint = matchPoint[RouteMatchType.prevSegment];
+          MyLogger("Match Point").d(
+              "Back into previous route segment ${minPoint!.id} ${minPoint.pointPosition.toStringAsFixed(2)}");
+        } else if (matchPoint.containsKey(RouteMatchType.jumpSegment)) {
+          matchType = RouteMatchType.jumpSegment;
+          minPoint = matchPoint[RouteMatchType.jumpSegment];
+          MyLogger("Match Point").d(
+              "Jump into next route segment ${minPoint!.id} ${minPoint.pointPosition.toStringAsFixed(2)}");
+        } else if (lastRouteInfoX.matchType == RouteMatchType.outOfRoute) {
+          datetime = lastRouteInfoX.firstMatchTime;
+          MyLogger("Match Point").d("User still out of route 2!");
         }
-        MyLogger("Match Point").d("MP selected ${mPoint.id} "
-            "queryId: ${mPoint.queryId} "
-            "originalPoint: ${mPoint.originalPoint} "
-            "${mPoint.pointPosition.toStringAsFixed(2)} "
-            "${mPoint.distanceToRoute.toStringAsFixed(2)} "
-            "${mPoint.latLng.latitude} ${mPoint.latLng.longitude}");
-        final newRouteInfo = SelectedRouteInfo2(
-          point: mPoint,
-          lastOkPoint: mPoint,
-          matchType: matchType,
-          firstMatchTime: datetime,
-        );
-        lastRouteInfo = newRouteInfo;
-        return newRouteInfo;
-      }
-    }
+
+        if (minPoint != null) {
+          var mPoint = minPoint;
+          if (mPoint.lineHeading == null) {
+            mPoint = mPoint.copyWith(lineHeading: lastPointX.lineHeading);
+          }
+          MyLogger("Match Point").d("MP selected ${mPoint.id} "
+              "queryId: ${mPoint.queryId} "
+              "originalPoint: ${mPoint.originalPoint} "
+              "${mPoint.pointPosition.toStringAsFixed(2)} "
+              "${mPoint.distanceToRoute.toStringAsFixed(2)} "
+              "${mPoint.latLng.latitude} ${mPoint.latLng.longitude}");
+          final newRouteInfo = SelectedRouteInfo2(
+            point: mPoint,
+            lastOkPoint: mPoint,
+            matchType: matchType,
+            firstMatchTime: datetime,
+          );
+          lastRouteInfo = newRouteInfo;
+          return newRouteInfo;
+        }
+      } */
     if (distanceToRoute < maxDistanceToRoute) {
       return _getMatchingPoint(
         listRoutingPoint,
@@ -402,4 +382,48 @@ class RoutingFn {
     MyLogger("Match Point").d("User still out of route 3!");
     return newRouteInfo;
   }
+}
+
+Future<List<RoutingPoint2>> _processRoutingPoints(
+    List<Map<String, dynamic>> dataRaw) async {
+  List<RoutingPoint2> response = await Isolate.run(() {
+    try {
+      return dataRaw
+          .map((e) {
+            if (e['pointPosition'] == null || e['fixedPoint'] == null) {
+              return null;
+            }
+            Street st = Street(
+              id: e['id'],
+              osmId: e["osm_id"],
+              name: e['nama'],
+              truk: e['truk'],
+              pickup: e['pickup'],
+              roda3: e['roda3'],
+              meta: e['meta'],
+              lastModifiedTime: DateTime.parse(e['last_modified_time']),
+              geom: e['geom'],
+            );
+            return RoutingPoint2(
+                id: e['id'],
+                street: st,
+                distanceToRoute: e['distanceToRoute'],
+                queryId: e['queryId'],
+                originalPoint: e['originalPoint'],
+                fixedPoint: e['fixedPoint'],
+                nextPoint: e['nextPoint'],
+                pointPosition: e['pointPosition'],
+                routeLength: e['routeLength'],
+                distanceLeft: e['distanceLeft'],
+                lineHeading: e['lineHeading']);
+          })
+          .whereType<RoutingPoint2>()
+          .toList();
+    } catch (error) {
+      MyLogger('Error processing data in isolate').e(error.toString());
+      return [];
+    }
+  });
+
+  return response;
 }

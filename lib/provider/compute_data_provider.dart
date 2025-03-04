@@ -54,7 +54,7 @@ class ProcessedStreetData extends _$ProcessedStreetData {
   int _determineSpeed(double speedInMph) {
     double speedInKmh = speedInMph * 3600 / 1000;
 
-    if (speedInKmh > 60) return 9000;
+    if (speedInKmh > 60) return 10000;
     if (speedInKmh > 35) return 15000;
     if (speedInKmh < 30) return 30000;
     return 30000;
