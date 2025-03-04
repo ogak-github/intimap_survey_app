@@ -359,7 +359,7 @@ class StreetData {
         for (var item in data) {
           Map<String, dynamic> map = item;
           RouteIssue s = RouteIssue.fromJson(map);
-          log(s.toJson().toString(), name: "Route Issue DB");
+          //log(s.toJson().toString(), name: "Route Issue DB");
           routeIssue.add(s);
         }
 

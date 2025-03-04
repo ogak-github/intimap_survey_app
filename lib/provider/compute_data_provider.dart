@@ -78,7 +78,7 @@ class ProcessedStreetData extends _$ProcessedStreetData {
 
       return routePoints;
     } catch (e) {
-      AppLogger().logger.e(e.toString());
+      MyLogger("Compute segment").e(e.toString());
       return [];
     }
   }
@@ -89,7 +89,7 @@ class ProcessedStreetData extends _$ProcessedStreetData {
       final newUniqId = uniqIdMd5();
       return await routeFunction?.getRouteSegment(loc, uniqId: newUniqId);
     } catch (e) {
-      AppLogger().logger.e(e.toString());
+      MyLogger("Compute segment info").e(e.toString());
       return null;
     }
   }
@@ -99,8 +99,8 @@ class ProcessedStreetData extends _$ProcessedStreetData {
     var selectedRoute = await _computeSegmentInfo(loc);
     if (routePoints == null) return;
 
-    d.log("${selectedRoute?.toJson()}", name: "Selected route points");
-    MyLogger("User current location").i(loc.toString());
+    //d.log("${selectedRoute?.toJson()}", name: "Selected route points");
+    MyLogger("Selected Route ID").d("${selectedRoute?.point?.id}");
     List<Street> newFilteredStreets =
         routePoints.map((e) => e.street).whereType<Street>().toList();
 
